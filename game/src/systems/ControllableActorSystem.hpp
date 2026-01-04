@@ -20,7 +20,7 @@ namespace lq
         Systems* sys;
         void onComponentAdded(entt::entity addedEntity);
         void onComponentRemoved(entt::entity removedEntity);
-        void setSelectedActor(entt::entity oldEntity, entt::entity newEntity) const;
+        void setSelectedActor(entt::entity oldActorEntity, entt::entity newActorEntity) const;
 
       public:
         void Update() const;

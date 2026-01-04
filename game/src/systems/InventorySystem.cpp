@@ -117,8 +117,11 @@ namespace lq
 
     InventorySystem::InventorySystem(entt::registry* _registry, Systems* _sys) : registry(_registry), sys(_sys)
     {
-
-        _sys->cursor->onItemClick.Subscribe([this](entt::entity itemId) { onWorldItemClicked(itemId); });
+        _sys->cursor->onLeftClick.Subscribe([this](entt::entity itemId) {
+            const auto& col = registry->get<sage::Collideable>(itemId);
+            if (col.collisionLayer != sage::CollisionLayer::ITEM) return;
+            onWorldItemClicked(itemId);
+        });
 
         registry->on_construct<InventoryComponent>().connect<&InventorySystem::onComponentAdded>(this);
         registry->on_destroy<InventoryComponent>().connect<&InventorySystem::onComponentRemoved>(this);

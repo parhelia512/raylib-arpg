@@ -34,11 +34,11 @@ namespace lq
         }
     }
 
-    void ControllableActorSystem::setSelectedActor(entt::entity oldEntity, entt::entity newEntity) const
+    void ControllableActorSystem::setSelectedActor(entt::entity oldActorEntity, entt::entity newActorEntity) const
     {
-        if (oldEntity != entt::null)
+        if (oldActorEntity != entt::null)
         {
-            auto& old = registry->get<ControllableActor>(oldEntity);
+            auto& old = registry->get<ControllableActor>(oldActorEntity);
             old.selectedIndicator->SetShader(
                 sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/base.fs"));
             old.selectedIndicator->SetHint(inactiveCol);
@@ -51,39 +51,47 @@ namespace lq
             old.cursorOnChestClickSub.UnSubscribe();
         }
 
-        auto& current = registry->get<ControllableActor>(newEntity);
+        auto& current = registry->get<ControllableActor>(newActorEntity);
         current.selectedIndicator->SetHint(activeCol);
         current.selectedIndicator->SetShader(
             sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/base.fs"));
 
         // Forward cursor clicks to this actor's controllable component's events
         current.cursorOnFloorClickSub =
-            sys->cursor->onFloorClick.Subscribe([this, newEntity](const entt::entity clickedEntity) {
-                const auto& c = registry->get<ControllableActor>(newEntity);
-                c.onFloorClick.Publish(newEntity, clickedEntity);
+            sys->cursor->onFloorClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
+                const auto& c = registry->get<ControllableActor>(newActorEntity);
+                c.onFloorClick.Publish(newActorEntity, clickedEntity);
             });
         current.cursorOnEnemyLeftClickSub =
-            sys->cursor->onEnemyLeftClick.Subscribe([this, newEntity](const entt::entity clickedEntity) {
-                const auto& c = registry->get<ControllableActor>(newEntity);
-                c.onEnemyLeftClick.Publish(newEntity, clickedEntity);
+            sys->cursor->onLeftClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
+                const auto& col = registry->get<sage::Collideable>(clickedEntity);
+                if (col.collisionLayer != sage::CollisionLayer::ENEMY) return;
+                const auto& c = registry->get<ControllableActor>(newActorEntity);
+                c.onEnemyLeftClick.Publish(newActorEntity, clickedEntity);
             });
         current.cursorOnEnemyRightClickSub =
-            sys->cursor->onEnemyRightClick.Subscribe([this, newEntity](const entt::entity clickedEntity) {
-                const auto& c = registry->get<ControllableActor>(newEntity);
-                c.onEnemyRightClick.Publish(newEntity, clickedEntity);
+            sys->cursor->onLeftClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
+                const auto& col = registry->get<sage::Collideable>(clickedEntity);
+                if (col.collisionLayer != sage::CollisionLayer::ENEMY) return;
+                const auto& c = registry->get<ControllableActor>(newActorEntity);
+                c.onEnemyRightClick.Publish(newActorEntity, clickedEntity);
             });
         current.cursorOnNPCLeftClickSub =
-            sys->cursor->onNPCClick.Subscribe([this, newEntity](const entt::entity clickedEntity) {
-                const auto& c = registry->get<ControllableActor>(newEntity);
-                c.onNPCLeftClick.Publish(newEntity, clickedEntity);
+            sys->cursor->onLeftClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
+                const auto& col = registry->get<sage::Collideable>(clickedEntity);
+                if (col.collisionLayer != sage::CollisionLayer::NPC) return;
+                const auto& c = registry->get<ControllableActor>(newActorEntity);
+                c.onNPCLeftClick.Publish(newActorEntity, clickedEntity);
             });
         current.cursorOnChestClickSub =
-            sys->cursor->onChestClick.Subscribe([this, newEntity](entt::entity clickedEntity) {
-                const auto& c = registry->get<ControllableActor>(newEntity);
-                c.onChestClick.Publish(newEntity, clickedEntity);
+            sys->cursor->onLeftClick.Subscribe([this, newActorEntity](entt::entity clickedEntity) {
+                const auto& col = registry->get<sage::Collideable>(clickedEntity);
+                if (col.collisionLayer != sage::CollisionLayer::CHEST) return;
+                const auto& c = registry->get<ControllableActor>(newActorEntity);
+                c.onChestClick.Publish(newActorEntity, clickedEntity);
             });
 
-        for (const auto group = sys->partySystem->GetGroup(newEntity); const auto& entity : group)
+        for (const auto group = sys->partySystem->GetGroup(newActorEntity); const auto& entity : group)
         {
             if (registry->any_of<PlayerState>(entity))
             {
@@ -94,10 +102,10 @@ namespace lq
                 registry->erase<PartyMemberState>(entity);
             }
         }
-        registry->emplace<PlayerState>(newEntity);
-        for (const auto group = sys->partySystem->GetGroup(newEntity); const auto& entity : group)
+        registry->emplace<PlayerState>(newActorEntity);
+        for (const auto group = sys->partySystem->GetGroup(newActorEntity); const auto& entity : group)
         {
-            if (entity != newEntity)
+            if (entity != newActorEntity)
             {
                 registry->emplace<PartyMemberState>(entity);
             }

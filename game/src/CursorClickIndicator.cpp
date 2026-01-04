@@ -8,6 +8,7 @@
 #include "engine/components/Renderable.hpp"
 #include "engine/components/sgTransform.hpp"
 #include "engine/Cursor.hpp"
+#include "engine/systems/NavigationGridSystem.hpp"
 #include "Systems.hpp"
 #include "systems/ControllableActorSystem.hpp"
 
@@ -16,7 +17,9 @@ namespace lq
 
     void CursorClickIndicator::onCursorClick(entt::entity entity) const
     {
-        if (entity == entt::null || !registry->any_of<sage::Collideable>(entity) || !sys->cursor->IsValidMove())
+        const auto selectedActor = sys->cursor->GetSelectedActor();
+        if (entity == entt::null || !registry->any_of<sage::Collideable>(entity) ||
+            !sys->navigationGridSystem->IsValidMove(sys->cursor->getFirstNaviCollision().point, selectedActor))
         {
             disableIndicator();
             return;
@@ -29,8 +32,6 @@ namespace lq
             disableIndicator();
             return;
         }
-
-        const auto selectedActor = sys->cursor->GetSelectedActor();
         const auto& moveable = registry->get<sage::MoveableActor>(selectedActor);
         if (!moveable.IsMoving())
         {
@@ -80,7 +81,7 @@ namespace lq
     CursorClickIndicator::CursorClickIndicator(entt::registry* _registry, Systems* _sys)
         : registry(_registry), sys(_sys), self(registry->create())
     {
-        _sys->cursor->onAnyLeftClick.Subscribe([this](const entt::entity entity) { onCursorClick(entity); });
+        _sys->cursor->onLeftClick.Subscribe([this](const entt::entity entity) { onCursorClick(entity); });
         _sys->cursor->onSelectedActorChange.Subscribe(
             [this](entt::entity prev, entt::entity current) { onSelectedActorChanged(prev, current); });
 

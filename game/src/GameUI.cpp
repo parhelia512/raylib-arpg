@@ -865,6 +865,8 @@ namespace lq
 
     void LeverUIEngine::onWorldItemHover(entt::entity entity)
     {
+        const auto& collideable = registry->get<sage::Collideable>(entity);
+        if (collideable.collisionLayer != sage::CollisionLayer::ITEM) return;
         if (!sys->inventorySystem->CheckWorldItemRange(true) || tooltipWindow) return;
         auto& item = registry->get<ItemComponent>(entity);
         auto viewport = sys->settings->GetViewPort();
@@ -876,6 +878,8 @@ namespace lq
 
     void LeverUIEngine::onNPCHover(entt::entity entity)
     {
+        const auto& collideable = registry->get<sage::Collideable>(entity);
+        if (collideable.collisionLayer != sage::CollisionLayer::NPC) return;
         if (tooltipWindow) return;
         auto& renderable = registry->get<sage::Renderable>(entity);
         auto viewport = sys->settings->GetViewPort();
@@ -896,9 +900,9 @@ namespace lq
     LeverUIEngine::LeverUIEngine(entt::registry* _registry, Systems* _sys)
         : GameUIEngine(_registry, _sys), sys(_sys)
     {
-        _sys->cursor->onItemHover.Subscribe([this](const entt::entity entity) { onWorldItemHover(entity); });
+        _sys->cursor->onHover.Subscribe([this](const entt::entity entity) { onWorldItemHover(entity); });
+        _sys->cursor->onHover.Subscribe([this](const entt::entity entity) { onNPCHover(entity); });
         _sys->cursor->onStopHover.Subscribe([this]() { onStopWorldHover(); });
-        _sys->cursor->onNPCHover.Subscribe([this](const entt::entity entity) { onNPCHover(entity); });
     }
 
 } // namespace lq

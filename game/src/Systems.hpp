@@ -26,7 +26,6 @@ namespace lq
     class EquipmentSystem;
     class QuestManager;
     class ContextualDialogSystem;
-    class SpatialAudioSystem;
     class LootTable;
     class LootSystem;
     class ControllableActorSystem;
