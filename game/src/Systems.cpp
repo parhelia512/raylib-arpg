@@ -18,7 +18,6 @@ namespace lq
         sage::AudioManager* _audioManager)
         : EngineSystems(_registry, _keyMapping, _settings, _audioManager),
           uiEngine(std::make_unique<LeverUIEngine>(_registry, this)),
-          cursorClickIndicator(std::make_unique<CursorClickIndicator>(_registry, this)),
           dialogSystem(std::make_unique<DialogSystem>(_registry, this)),
           dialogFactory(std::make_unique<DialogFactory>(_registry, this)),
           npcManager(std::make_unique<NPCManager>(_registry, this)),

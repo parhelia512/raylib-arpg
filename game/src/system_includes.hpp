@@ -6,7 +6,6 @@
 
 // Systems
 #include "AbilityFactory.hpp"
-#include "CursorClickIndicator.hpp"
 #include "DialogFactory.hpp"
 #include "ItemFactory.hpp"
 #include "LootTable.hpp"
@@ -26,6 +25,7 @@
 
 #include "engine/Camera.hpp"
 #include "engine/Cursor.hpp"
+#include "engine/CursorClickIndicator.hpp"
 #include "engine/FullscreenTextOverlayManager.hpp"
 #include "engine/GameUiEngine.hpp"
 #include "engine/LightManager.hpp"

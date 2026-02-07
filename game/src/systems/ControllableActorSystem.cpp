@@ -58,7 +58,7 @@ namespace lq
 
         // Forward cursor clicks to this actor's controllable component's events
         current.cursorOnFloorClickSub =
-            sys->cursor->onFloorClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
+            sys->cursor->onNavigationClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
                 const auto& c = registry->get<ControllableActor>(newActorEntity);
                 c.onFloorClick.Publish(newActorEntity, clickedEntity);
             });

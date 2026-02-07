@@ -6,8 +6,8 @@
 
 #include "entt/entt.hpp"
 
-namespace lq::serializer
+namespace lq::maploader
 {
     void SaveMap(entt::registry& source, const char* path);
     void LoadMap(entt::registry* destination, const char* path);
-} // namespace lq::serializer
+} // namespace lq::maploader

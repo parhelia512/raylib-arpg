@@ -1,4 +1,4 @@
-#include "Serializer.hpp"
+#include "MapLoader.hpp"
 
 #include "engine/components/Collideable.hpp"
 #include "engine/components/DoorBehaviorComponent.hpp"
@@ -24,7 +24,7 @@
 #include <cereal/archives/json.hpp>
 #include <fstream>
 
-namespace lq::serializer
+namespace lq::maploader
 {
     void SaveMap(entt::registry& source, const char* path)
     {
@@ -50,6 +50,17 @@ namespace lq::serializer
             output(lightLoader);
 
             output(sage::ResourceManager::GetInstance());
+
+            sage::ViewSerializer<sage::Renderable> renderableLoader(&source);
+            output(renderableLoader);
+            sage::ViewSerializer<sage::Collideable> collideableLoader(&source);
+            output(collideableLoader);
+
+            sage::ViewSerializer<sage::sgTransform> transformLoader(&source);
+            output(transformLoader);
+
+            sage::ViewSerializer<ItemComponent> itemComponentLoader(&source);
+            output(itemComponentLoader);
 
             // TODO: Below would be solved better with ViewSerializer if we could pass in Renderable,
             // Collideable etc. Currently not possible as they cannot be copied.
@@ -173,4 +184,4 @@ namespace lq::serializer
         storage.close();
         std::cout << "FINISH: Loading resource data from file." << std::endl;
     }
-} // namespace lq::serializer
+} // namespace lq::maploader

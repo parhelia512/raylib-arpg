@@ -3,7 +3,7 @@
 #include "system_includes.hpp"
 #include "Systems.hpp"
 
-#include "../CursorClickIndicator.hpp"
+#include "../../../engine/CursorClickIndicator.hpp"
 #include "engine/AudioManager.hpp"
 #include "engine/Camera.hpp"
 #include "engine/components/Renderable.hpp"
@@ -18,7 +18,7 @@
 #include "GameObjectFactory.hpp"
 #include "GameUI.hpp"
 #include "GameUiFactory.hpp"
-#include "Serializer.hpp"
+#include "MapLoader.hpp"
 
 #include "engine/UserInput.hpp"
 

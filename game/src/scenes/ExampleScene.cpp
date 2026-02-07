@@ -5,7 +5,7 @@
 #include "ExampleScene.hpp"
 
 #include "components/States.hpp"
-#include "Serializer.hpp"
+#include "MapLoader.hpp"
 #include "Systems.hpp"
 #include "systems/ControllableActorSystem.hpp"
 #include "systems/DialogSystem.hpp"

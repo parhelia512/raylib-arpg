@@ -29,7 +29,6 @@ namespace lq
     class LootTable;
     class LootSystem;
     class ControllableActorSystem;
-    class CursorClickIndicator;
 
     class Systems : public sage::EngineSystems
     {
@@ -48,7 +47,6 @@ namespace lq
         std::unique_ptr<InventorySystem> inventorySystem;
         std::unique_ptr<PartySystem> partySystem;
         std::unique_ptr<EquipmentSystem> equipmentSystem;
-        std::unique_ptr<CursorClickIndicator> cursorClickIndicator;
         std::unique_ptr<ControllableActorSystem> controllableActorSystem;
         std::unique_ptr<QuestManager> questManager;
         std::unique_ptr<ContextualDialogSystem> contextualDialogSystem;

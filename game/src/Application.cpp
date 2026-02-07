@@ -19,8 +19,8 @@
 // tmp
 #include "abilities/AbilityData.hpp"
 #include "components/Ability.hpp"
+#include "MapLoader.hpp"
 #include "sage-cereal.hpp"
-#include "Serializer.hpp"
 
 namespace lq
 {
@@ -38,7 +38,7 @@ namespace lq
         audioManager = std::make_unique<sage::AudioManager>();
 
         sage::serializer::LoadAssetBinFile(registry.get(), "resources/assets.bin");
-        serializer::LoadMap(registry.get(), "resources/dungeon-map.bin");
+        maploader::LoadMap(registry.get(), "resources/dungeon-map.bin");
         // serializer::LoadMap(registry.get(), "resources/cave.bin");
 
         auto icon = sage::ResourceManager::GetInstance().GetImage("application_icon");

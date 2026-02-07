@@ -17,7 +17,7 @@
 #include "game/src/GameObjectFactory.hpp"
 #include "game/src/ItemFactory.hpp"
 #include "game/src/QuestManager.hpp"
-#include "game/utils/Serializer.hpp"
+#include "game/utils/MapLoader.hpp"
 
 #include "raylib.h"
 #include "raymath.h"
@@ -379,7 +379,7 @@ namespace sage
         ResourceManager::GetInstance().ImageLoadFromFile("HEIGHT_MAP", heightMap.GetImage());
         ResourceManager::GetInstance().ImageLoadFromFile("NORMAL_MAP", normalMap.GetImage());
 
-        lq::serializer::SaveMap(*registry, output);
+        lq::maploader::SaveMap(*registry, output);
         std::cout << "FINISH: Constructing map into bin file. \n";
     }
 

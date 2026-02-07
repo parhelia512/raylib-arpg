@@ -8,20 +8,17 @@
 
 #include "entt/entt.hpp"
 
-#include <memory>
-
-namespace lq
+namespace sage
 {
-    class Systems;
-
+    class EngineSystems;
     class CursorClickIndicator
     {
         entt::registry* registry;
-        Systems* sys;
+        EngineSystems* sys;
         entt::entity self;
         float k = 0;
 
-        sage::Subscription destinationReachedSub{};
+        Subscription destinationReachedSub{};
 
         void onCursorClick(entt::entity entity) const;
         void disableIndicator() const;
@@ -29,7 +26,7 @@ namespace lq
 
       public:
         void Update();
-        CursorClickIndicator(entt::registry* _registry, Systems* _sys);
+        CursorClickIndicator(entt::registry* _registry, EngineSystems* _sys);
     };
 
-} // namespace lq
+} // namespace sage
