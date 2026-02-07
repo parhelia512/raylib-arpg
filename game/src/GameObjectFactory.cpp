@@ -64,7 +64,7 @@ namespace lq
         sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
         auto gs = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col);
         assert(gs);
-        float height = gs->GetTerrainHeight();
+        float height = gs->heightMap.GetHeight();
         transform.SetPosition({position.x, height, position.z});
     }
 
@@ -276,7 +276,7 @@ namespace lq
             sage::GridSquare actorIdx{};
             sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
             float height =
-                sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->GetTerrainHeight();
+                sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
             transform.SetPosition({position.x, 12, position.z});
             transform.SetScale(1.0f);
             transform.SetRotation({0, 0, 0});
@@ -320,7 +320,7 @@ namespace lq
         auto& transform = registry->emplace<sage::sgTransform>(id, id);
         sage::GridSquare actorIdx{};
         sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
-        float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->GetTerrainHeight();
+        float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
         transform.SetPosition({position.x, height, position.z});
         transform.SetScale(10.0f);
         transform.SetRotation({0, 0, 0});
@@ -344,7 +344,7 @@ namespace lq
         auto& transform = registry->emplace<sage::sgTransform>(id, id);
         sage::GridSquare actorIdx{};
         sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
-        float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->GetTerrainHeight();
+        float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
         transform.SetPosition({position.x, height, position.z});
         transform.SetScale(1.0f);
         transform.SetRotation({0, 0, 0});

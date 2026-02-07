@@ -112,7 +112,7 @@ namespace sage
         }
 
         // Remove carriage returns from the line
-        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+        std::erase(line, '\r');
 
         return line.substr(key.length() + 2); // +2 to skip ": "
     }
@@ -276,8 +276,8 @@ namespace sage
         entt::registry* registry, lq::ItemFactory* itemFactory, std::ifstream& infile, const fs::path& meshPath)
     {
         int x;
-        auto itemEntity = HandleMesh(registry, infile, meshPath, x);
-        auto itemName = registry->get<Renderable>(itemEntity).GetModel()->GetKey();
+        const auto itemEntity = HandleMesh(registry, infile, meshPath, x);
+        const auto itemName = registry->get<Renderable>(itemEntity).GetModel()->GetKey();
         itemFactory->AttachItem(itemEntity, itemName);
     }
 
@@ -411,6 +411,7 @@ namespace sage
             std::cout << "START: Processing image data into resource manager. \n";
             for (const auto& entry : fs::recursive_directory_iterator(imagePath))
             {
+                if (!entry.is_regular_file()) continue;
                 if (entry.path().extension() == ".png")
                 {
                     ResourceManager::GetInstance().ImageLoadFromFile(entry.path());
@@ -428,6 +429,7 @@ namespace sage
             std::cout << "START: Processing icon data into resource manager. \n";
             for (const auto& entry : fs::recursive_directory_iterator(iconsPath))
             {
+                if (!entry.is_regular_file()) continue;
                 if (entry.path().extension() == ".png")
                 {
                     ResourceManager::GetInstance().ImageLoadFromFile(entry.path());
@@ -445,6 +447,7 @@ namespace sage
             std::cout << "START: Processing font data into resource manager. \n";
             for (const auto& entry : fs::recursive_directory_iterator(iconsPath))
             {
+                if (!entry.is_regular_file()) continue;
                 if (entry.path().extension() == ".ttf")
                 {
                     ResourceManager::GetInstance().FontLoadFromFile(entry.path());
@@ -460,9 +463,10 @@ namespace sage
                 return;
             }
             std::cout << "START: Processing model data into resource manager. \n";
-            constexpr std::array<std::string, 3> validExtensions = {".glb", ".gltf", ".obj"};
+            constexpr std::array validExtensions = {".glb", ".gltf", ".obj"};
             for (const auto& entry : fs::recursive_directory_iterator(modelPath))
             {
+                if (!entry.is_regular_file()) continue;
                 if (std::find(validExtensions.begin(), validExtensions.end(), entry.path().extension()) ==
                     validExtensions.end())
                 {
