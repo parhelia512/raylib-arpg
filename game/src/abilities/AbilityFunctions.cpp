@@ -1,8 +1,8 @@
 #include "AbilityFunctions.hpp"
 
-#include "../../../engine/Cursor.hpp"
 #include "components/Ability.hpp"
 #include "components/CombatableActor.hpp"
+#include "engine/Cursor.hpp"
 #include "GameObjectFactory.hpp"
 #include "Systems.hpp"
 
@@ -13,7 +13,9 @@
 
 #include "vfx/RainOfFireVFX.hpp"
 
+#include "engine/systems/TransformSystem.hpp"
 #include "raymath.h"
+
 #include <iostream>
 #include <memory>
 
@@ -45,7 +47,11 @@ namespace lq
     }
 
     void HitSingleTarget(
-        entt::registry* registry, entt::entity caster, entt::entity abilityEntity, entt::entity target)
+        entt::registry* registry,
+        sage::EngineSystems* sys,
+        entt::entity caster,
+        entt::entity abilityEntity,
+        entt::entity target)
     {
         assert(target != entt::null);
 
@@ -55,7 +61,7 @@ namespace lq
         auto& enemyPos = registry->get<sage::sgTransform>(target).GetWorldPos();
         Vector3 direction = Vector3Subtract(enemyPos, t.GetWorldPos());
         float angle = atan2f(direction.x, direction.z) * RAD2DEG;
-        t.SetRotation({0, angle, 0});
+        sys->transformSystem->SetRotation(caster, {0, angle, 0});
 
         if (registry->any_of<CombatableActor>(target))
         {

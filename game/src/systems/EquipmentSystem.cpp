@@ -24,6 +24,7 @@
 #include "PartySystem.hpp"
 #include "Systems.hpp"
 
+#include "engine/systems/TransformSystem.hpp"
 #include "raylib.h"
 #include "raymath.h"
 
@@ -87,9 +88,9 @@ namespace lq
         weapon.parentSocket = weaponMat;
         weapon.parentBoneName = "mixamorig:RightHand";
         weapon.owner = owner;
-        auto& renderable = registry->get<sage::Renderable>(owner);
-        auto& transform = registry->get<sage::sgTransform>(owner);
-        auto& item = registry->get<ItemComponent>(itemId);
+        const auto& renderable = registry->get<sage::Renderable>(owner);
+        const auto& transform = registry->get<sage::sgTransform>(owner);
+        const auto& item = registry->get<ItemComponent>(itemId);
         registry->emplace<sage::Renderable>(
             weaponEntity,
             sage::ResourceManager::GetInstance().GetModelCopy(item.model),
@@ -98,11 +99,10 @@ namespace lq
             registry->emplace<sage::UberShaderComponent>(weaponEntity, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
 
-        auto& weaponTrans = registry->emplace<sage::sgTransform>(weaponEntity, weaponEntity);
-        weaponTrans.SetParent(&transform);
-        weaponTrans.SetLocalPos(Vector3Zero());
-        weaponTrans.SetLocalRot({0, 0, 0, 0});
-
+        registry->emplace<sage::sgTransform>(weaponEntity);
+        sys->transformSystem->SetParent(weaponEntity, owner);
+        sys->transformSystem->SetLocalPos(weaponEntity, Vector3Zero());
+        sys->transformSystem->SetLocalRot(weaponEntity, {0, 0, 0, 0});
         auto& animation = registry->get<sage::Animation>(owner);
         weapon.animationFollowSub = animation.onAnimationUpdated.Subscribe(
             [this](entt::entity _entity) { updateCharacterWeaponPosition(_entity); });
@@ -115,8 +115,8 @@ namespace lq
         UnloadTexture(info.portraitImg.texture);
         info.portraitImg = LoadRenderTexture(width, height);
 
-        auto& transform = registry->get<sage::sgTransform>(entity);
-        auto& renderable = registry->get<sage::Renderable>(entity);
+        const auto& transform = registry->get<sage::sgTransform>(entity);
+        const auto& renderable = registry->get<sage::Renderable>(entity);
         auto& animation = registry->get<sage::Animation>(entity);
 
         // TODO: Should probably update the weapons again after taking the "photo"
@@ -124,8 +124,7 @@ namespace lq
         auto oldPos = transform.GetWorldPos();
         auto cameraPos = sys->camera->GetPosition();
         auto cameraTarget = sys->camera->getRaylibCam()->target;
-
-        transform.SetPosition({0, -999, 0});
+        sys->transformSystem->SetPosition(entity, {0, -999, 0});
 
         auto current = animation.current;
         animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE2);
@@ -146,7 +145,8 @@ namespace lq
         EndTextureMode();
 
         animation.current = current;
-        transform.SetPosition(oldPos);
+        sys->transformSystem->SetPosition(entity, oldPos);
+
         sys->camera->SetCamera(cameraPos, cameraTarget);
     }
 
@@ -154,8 +154,8 @@ namespace lq
     {
 
         auto& equipment = registry->get<EquipmentComponent>(entity);
-        auto& transform = registry->get<sage::sgTransform>(entity);
-        auto& renderable = registry->get<sage::Renderable>(entity);
+        const auto& transform = registry->get<sage::sgTransform>(entity);
+        const auto& renderable = registry->get<sage::Renderable>(entity);
         auto& animation = registry->get<sage::Animation>(entity);
 
         // TODO: Should probably update the weapons again after taking the "photo"
@@ -164,7 +164,7 @@ namespace lq
         auto cameraPos = sys->camera->GetPosition();
         auto cameraTarget = sys->camera->getRaylibCam()->target;
 
-        transform.SetPosition({0, -999, 0});
+        sys->transformSystem->SetPosition(entity, {0, -999, 0});
         sys->camera->SetCamera({6, -996, 12}, {0, -996, 0});
 
         auto current = animation.current;
@@ -206,7 +206,7 @@ namespace lq
         EndTextureMode();
 
         animation.current = current;
-        transform.SetPosition(oldPos);
+        sys->transformSystem->SetPosition(entity, oldPos);
         sys->camera->SetCamera(cameraPos, cameraTarget);
     }
 
@@ -250,8 +250,8 @@ namespace lq
         {
             if (equipment.worldModels.contains(itemType) && equipment.worldModels[itemType] != entt::null)
             {
-                auto& trans = registry->get<sage::sgTransform>(equipment.worldModels[itemType]);
-                trans.SetParent(nullptr);
+                registry->get<sage::sgTransform>(equipment.worldModels[itemType]);
+                sys->transformSystem->SetParent(equipment.worldModels[itemType], entt::null);
                 registry->emplace<sage::DeleteEntityComponent>(equipment.worldModels[itemType]);
                 auto& weapon = registry->get<WeaponComponent>(equipment.worldModels[itemType]);
                 weapon.animationFollowSub.UnSubscribe();

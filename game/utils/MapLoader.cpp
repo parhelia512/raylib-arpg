@@ -51,19 +51,9 @@ namespace lq::maploader
 
             output(sage::ResourceManager::GetInstance());
 
-            sage::ViewSerializer<sage::Renderable> renderableLoader(&source);
-            output(renderableLoader);
-            sage::ViewSerializer<sage::Collideable> collideableLoader(&source);
-            output(collideableLoader);
-
-            sage::ViewSerializer<sage::sgTransform> transformLoader(&source);
-            output(transformLoader);
-
-            sage::ViewSerializer<ItemComponent> itemComponentLoader(&source);
-            output(itemComponentLoader);
-
-            // TODO: Below would be solved better with ViewSerializer if we could pass in Renderable,
-            // Collideable etc. Currently not possible as they cannot be copied.
+            // Note: ViewSerializer creates separate entities per component type, so it can't reconstruct
+            // multi-component entities (Renderable+Collideable+sgTransform must share one entity).
+            // Per-entity serialization is used instead.
             const auto itemView =
                 source.view<sage::Renderable, sage::sgTransform, sage::Collideable, ItemComponent>();
             unsigned int itemCount = 0;
@@ -104,7 +94,7 @@ namespace lq::maploader
     {
         assert(destination != nullptr);
 
-        std::cout << "START: Loading resource data from file." << std::endl;
+        std::cout << "START: Loading map data from file." << std::endl;
 
         using namespace entt::literals;
         std::ifstream storage(path, std::ios::binary);
@@ -132,7 +122,7 @@ namespace lq::maploader
             {
                 auto entt = destination->create();
                 sage::serializer::entity entityId{}; // ignore this (old serialized entity)
-                auto& transform = destination->emplace<sage::sgTransform>(entt, entt);
+                auto& transform = destination->emplace<sage::sgTransform>(entt);
                 auto& collideable = destination->emplace<sage::Collideable>(entt);
                 auto& renderable = destination->emplace<sage::Renderable>(entt);
                 auto& item = destination->emplace<ItemComponent>(entt);
@@ -152,7 +142,7 @@ namespace lq::maploader
             {
                 sage::serializer::entity entityId{}; // ignore this (old serialized entity)
                 auto entt = destination->create();
-                auto& transform = destination->emplace<sage::sgTransform>(entt, entt);
+                auto& transform = destination->emplace<sage::sgTransform>(entt);
                 auto& collideable = destination->emplace<sage::Collideable>(entt);
                 auto& renderable = destination->emplace<sage::Renderable>(entt);
 
@@ -182,6 +172,6 @@ namespace lq::maploader
         }
 
         storage.close();
-        std::cout << "FINISH: Loading resource data from file." << std::endl;
+        std::cout << "FINISH: Loading map data from file." << std::endl;
     }
 } // namespace lq::maploader

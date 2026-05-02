@@ -4,16 +4,20 @@
 
 #pragma once
 
+#include "entt/entt.hpp"
 #include "raylib.h"
 
-#include "entt/entt.hpp"
-
+namespace sage
+{
+    class EngineSystems;
+}
 namespace lq
 {
 
     class Explosion
     {
         entt::registry* registry;
+        sage::EngineSystems* sys;
         entt::entity entity;
         float scale = 0;
         float maxScale = 10;
@@ -23,7 +27,7 @@ namespace lq
         void Update();
         void Restart();
         void SetOrigin(Vector3 origin);
-        explicit Explosion(entt::registry* _registry);
+        explicit Explosion(entt::registry* _registry, sage::EngineSystems* _sys);
     };
 
-} // namespace sage
+} // namespace lq

@@ -19,6 +19,7 @@
 #include "systems/PartySystem.hpp"
 #include "systems/PlayerAbilitySystem.hpp"
 
+#include "engine/systems/TransformSystem.hpp"
 #include "raylib.h"
 #include "StateMachines.hpp"
 #include "systems/LootSystem.hpp"
@@ -261,7 +262,8 @@ namespace lq
             Vector3 direction = Vector3Subtract(npcTrans.GetWorldPos(), actorTrans.GetWorldPos());
             direction = Vector3Normalize(direction);
             const float angle = atan2f(direction.x, direction.z);
-            actorTrans.SetRotation({actorTrans.GetWorldRot().x, RAD2DEG * angle, actorTrans.GetWorldRot().z});
+            sys->transformSystem->SetRotation(
+                self, {actorTrans.GetWorldRot().x, RAD2DEG * angle, actorTrans.GetWorldRot().z});
 
             sys->dialogSystem->StartConversation(npcTrans, playerDiag.dialogTarget);
             sys->playerAbilitySystem->UnsubscribeFromUserInput();

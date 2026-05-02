@@ -17,7 +17,9 @@
 #include "engine/Cursor.hpp"
 #include "engine/TextureTerrainOverlay.hpp"
 
+#include "engine/systems/TransformSystem.hpp"
 #include "raylib.h"
+
 #include <cassert>
 #include <iostream>
 
@@ -190,7 +192,7 @@ namespace lq
         if (ad.base.HasBehaviour(AbilityBehaviour::ATTACK_TARGET))
         {
             auto target = registry->get<CombatableActor>(ab.caster).target;
-            HitSingleTarget(registry, ab.caster, abilityEntity, target);
+            HitSingleTarget(registry, sys, ab.caster, abilityEntity, target);
         }
         else if (ad.base.HasBehaviour(AbilityBehaviour::ATTACK_AOE_POINT))
         {
@@ -241,7 +243,7 @@ namespace lq
         auto* vfx = ab.GetVfx(registry);
         if (vfx)
         {
-            auto& trans{registry->get<sage::sgTransform>(abilityEntity)};
+            const auto& trans{registry->get<sage::sgTransform>(abilityEntity)};
             if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CASTER))
             {
                 auto& casterTrans{registry->get<sage::sgTransform>(ab.caster)};
@@ -252,25 +254,25 @@ namespace lq
                 {
                     // TODO: Can this be set in the ability's constructor?
                     // Then we can just say "if ability doesn't follow caster, then set its position"
-                    if (trans.GetParent() != &casterTrans)
+                    if (trans.GetParent() != ab.caster)
                     {
-                        trans.SetParent(&casterTrans);
-                        trans.SetLocalPos({0, heightOffset, 0});
-                        trans.SetLocalRot(Vector3Zero());
+                        sys->transformSystem->SetParent(abilityEntity, ab.caster);
+                        sys->transformSystem->SetLocalPos(abilityEntity, {0, heightOffset, 0});
+                        sys->transformSystem->SetLocalRot(abilityEntity, Vector3Zero());
                     }
                 }
                 else
                 {
                     Vector3 pos{casterTrans.GetWorldPos().x, heightOffset, casterTrans.GetWorldPos().z};
-                    trans.SetPosition(pos);
-                    trans.SetRotation(casterTrans.GetWorldRot());
+                    sys->transformSystem->SetPosition(abilityEntity, pos);
+                    sys->transformSystem->SetRotation(abilityEntity, casterTrans.GetWorldRot());
                 }
 
                 vfx->InitSystem();
             }
             else if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CURSOR))
             {
-                trans.SetPosition(sys->cursor->getFirstNaviCollision().point);
+                sys->transformSystem->SetPosition(abilityEntity, sys->cursor->getFirstNaviCollision().point);
                 vfx->InitSystem();
             }
         }

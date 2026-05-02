@@ -50,6 +50,6 @@ namespace lq
         SetShaderValue(shader, screenSizeLoc, &screenSize, SHADER_UNIFORM_VEC2);
 
         texture = std::make_unique<sage::TextureTerrainOverlay>(
-            _sys->registry, _sys->navigationGridSystem.get(), "indicator_rainoffire", WHITE, shader);
+            _sys->registry, _sys, "indicator_rainoffire", WHITE, shader);
     }
 } // namespace lq

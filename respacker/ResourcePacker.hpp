@@ -12,6 +12,7 @@
 namespace sage
 {
     class NavigationGridSystem;
+    class TransformSystem;
 
     class ResourcePacker
     {
@@ -19,6 +20,7 @@ namespace sage
         static void ConstructMap(
             entt::registry* registry,
             NavigationGridSystem* navigationGridSystem,
+            TransformSystem* transformSystem,
             const char* input,
             const char* output);
 

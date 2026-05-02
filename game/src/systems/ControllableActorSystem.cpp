@@ -117,7 +117,7 @@ namespace lq
         auto& controllable = registry->get<ControllableActor>(addedEntity);
         controllable.selectedIndicator = std::make_unique<sage::TextureTerrainOverlay>(
             registry,
-            sys->navigationGridSystem.get(),
+            sys,
             sage::ResourceManager::GetInstance().TextureLoad("resources/textures/particles/circle_03.png"),
             inactiveCol,
             "resources/shaders/glsl330/base.fs");

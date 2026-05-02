@@ -10,7 +10,7 @@
 
 namespace sage
 {
-    class NavigationGridSystem;
+    class EngineSystems;
 }
 
 namespace lq
@@ -27,8 +27,6 @@ namespace lq
         void Update(Vector3 mouseRayHit);
         void Enable(bool enable);
         AbilityIndicator(
-            entt::registry* _registry,
-            sage::NavigationGridSystem* _navigationGridSystem,
-            const std::string& assetId);
+            entt::registry* _registry, sage::EngineSystems* _engineSystems, const std::string& assetId);
     };
 } // namespace lq

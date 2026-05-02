@@ -1,6 +1,6 @@
 #include "AbilityIndicator.hpp"
 
-#include "engine/systems/NavigationGridSystem.hpp"
+#include "engine/EngineSystems.hpp"
 #include "engine/TextureTerrainOverlay.hpp"
 
 namespace lq
@@ -22,10 +22,10 @@ namespace lq
     }
 
     AbilityIndicator::AbilityIndicator(
-        entt::registry* _registry, sage::NavigationGridSystem* _navigationGridSystem, const std::string& assetId)
+        entt::registry* _registry, sage::EngineSystems* _engineSystems, const std::string& assetId)
         : indicatorTexture(
               std::make_unique<sage::TextureTerrainOverlay>(
-                  _registry, _navigationGridSystem, assetId, WHITE, "resources/shaders/glsl330/base.fs"))
+                  _registry, _engineSystems, assetId, WHITE, "resources/shaders/glsl330/base.fs"))
     {
     }
 } // namespace lq

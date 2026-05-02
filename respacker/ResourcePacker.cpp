@@ -19,6 +19,7 @@
 #include "game/src/QuestManager.hpp"
 #include "game/utils/MapLoader.hpp"
 
+#include "engine/systems/TransformSystem.hpp"
 #include "raylib.h"
 #include "raymath.h"
 
@@ -207,7 +208,12 @@ namespace sage
         spawner.name = spawnerName;
     }
 
-    entt::entity HandleMesh(entt::registry* registry, std::ifstream& infile, const fs::path& meshPath, int& slices)
+    entt::entity HandleMesh(
+        entt::registry* registry,
+        TransformSystem* transformSystem,
+        std::ifstream& infile,
+        const fs::path& meshPath,
+        int& slices)
     {
         std::string meshName, objectName;
         float x, y, z, rotx, roty, rotz, scalex, scaley, scalez;
@@ -249,16 +255,19 @@ namespace sage
 
         // We set the transform component's position instead of setting the model's transform.
         // By doing this, we can track where certain (static) objects are.
-        auto& trans = registry->emplace<sgTransform>(entity, entity);
-        trans.SetPosition(scaledPosition);
+        registry->emplace<sgTransform>(entity);
+        transformSystem->SetPosition(entity, scaledPosition);
+        const auto& trans = registry->get<sgTransform>(entity);
+        const auto& transMatrix = trans.GetMatrix();
+        const auto& localBoundingBox = renderable.GetModel()->CalcLocalBoundingBox();
 
-        auto& collideable = registry->emplace<Collideable>(
-            entity, renderable.GetModel()->CalcLocalBoundingBox(), trans.GetMatrix());
+        auto& collideable = registry->emplace<Collideable>(entity, localBoundingBox, transMatrix);
 
         collideable.collisionLayer = getCollisionLayer(objectName);
 
         if (objectName.find("_MAPBASE_") != std::string::npos)
         {
+            std::cout << "Calculating map base." << std::endl;
             slices = std::ceil(
                 std::max(
                     collideable.worldBoundingBox.max.x - collideable.worldBoundingBox.min.x,
@@ -267,22 +276,29 @@ namespace sage
             {
                 slices += 1;
             }
+            std::cout << "slices: " << slices << std::endl;
         }
 
         return entity;
     }
 
     void HandleItem(
-        entt::registry* registry, lq::ItemFactory* itemFactory, std::ifstream& infile, const fs::path& meshPath)
+        entt::registry* registry,
+        TransformSystem* transformSystem,
+        lq::ItemFactory* itemFactory,
+        std::ifstream& infile,
+        const fs::path& meshPath)
     {
         int x;
-        const auto itemEntity = HandleMesh(registry, infile, meshPath, x);
+        const auto itemEntity = HandleMesh(registry, transformSystem, infile, meshPath, x);
         const auto itemName = registry->get<Renderable>(itemEntity).GetModel()->GetKey();
         itemFactory->AttachItem(itemEntity, itemName);
     }
 
     void processTxtFile(
         entt::registry* registry,
+        NavigationGridSystem* navigationGridSystem,
+        TransformSystem* transformSystem,
         lq::ItemFactory* itemFactory,
         const fs::path& meshPath,
         const fs::path& txtPath,
@@ -311,17 +327,18 @@ namespace sage
         }
         else if (typeName.find("item") != std::string::npos)
         {
-            HandleItem(registry, itemFactory, infile, meshPath);
+            HandleItem(registry, transformSystem, itemFactory, infile, meshPath);
         }
         else
         {
-            HandleMesh(registry, infile, meshPath, slices);
+            HandleMesh(registry, transformSystem, infile, meshPath, slices);
         }
     }
 
     void ResourcePacker::ConstructMap(
         entt::registry* registry,
         NavigationGridSystem* navigationGridSystem,
+        TransformSystem* transformSystem,
         const char* input,
         const char* output)
     {
@@ -361,7 +378,8 @@ namespace sage
         {
             if (entry.path().extension() == ".txt")
             {
-                processTxtFile(registry, &itemFactory, meshPath, entry.path(), slices);
+                processTxtFile(
+                    registry, navigationGridSystem, transformSystem, &itemFactory, meshPath, entry.path(), slices);
             }
         }
         std::cout << "FINISH: Processing txt data into resource manager. \n";

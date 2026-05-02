@@ -14,7 +14,8 @@ namespace lq
 
     struct GameObjectFactory
     {
-        static entt::entity createDialogCutscene(entt::registry* registry, Vector3 position, const char* name);
+        static entt::entity createDialogCutscene(
+            entt::registry* registry, Systems* sys, Vector3 position, const char* name);
         static entt::entity createEnemy(
             entt::registry* registry, Systems* sys, Vector3 position, Vector3 rotation, const char* name);
         static entt::entity createGoblinNPC(
@@ -25,6 +26,7 @@ namespace lq
             entt::registry* registry, Systems* sys, Vector3 position, Vector3 rotation, const char* name);
         static void createPortal(entt::registry* registry, Systems* sys, Vector3 position);
         static void createWizardTower(entt::registry* registry, Systems* sys, Vector3 position);
-        static bool spawnItemInWorld(entt::registry* registry, entt::entity itemId, Vector3 position);
+        static bool spawnItemInWorld(
+            entt::registry* registry, Systems* sys, entt::entity itemId, Vector3 position);
     };
 } // namespace lq

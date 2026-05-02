@@ -20,7 +20,7 @@ namespace lq
     };
 
     void createProjectile(
-        entt::registry* registry, entt::entity caster, entt::entity abilityEntity, Systems* data);
+        entt::registry* registry, entt::entity caster, entt::entity abilityEntity, Systems* sys);
 
     class AbilityFactory
     {

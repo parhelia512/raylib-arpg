@@ -51,7 +51,7 @@ namespace lq
             }
             else if (spawner.type == sage::SpawnerType::DIALOG_CUTSCENE)
             {
-                GameObjectFactory::createDialogCutscene(registry, spawner.pos, spawner.name.c_str());
+                GameObjectFactory::createDialogCutscene(registry, sys.get(), spawner.pos, spawner.name.c_str());
             }
         }
         registry->erase<sage::Spawner>(spawnerView.begin(), spawnerView.end());

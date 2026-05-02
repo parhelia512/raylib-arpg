@@ -33,6 +33,7 @@
 #include "systems/ControllableActorSystem.hpp"
 
 #include "engine/Cursor.hpp"
+#include "engine/systems/TransformSystem.hpp"
 #include "raymath.h"
 
 namespace lq
@@ -59,22 +60,20 @@ namespace lq
 
     void placeActor(entt::registry* registry, entt::entity entity, Systems* sys, Vector3 position)
     {
-        auto& transform = registry->get<sage::sgTransform>(entity);
         sage::GridSquare actorIdx{};
         sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
         auto gs = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col);
         assert(gs);
         float height = gs->heightMap.GetHeight();
-        transform.SetPosition({position.x, height, position.z});
+        sys->transformSystem->SetPosition(entity, {position.x, height, position.z});
     }
 
     entt::entity GameObjectFactory::createDialogCutscene(
-        entt::registry* registry, Vector3 position, const char* name)
+        entt::registry* registry, Systems* sys, Vector3 position, const char* name)
     {
         entt::entity id = registry->create();
-
-        auto& transform = registry->emplace<sage::sgTransform>(id, id);
-        transform.SetPosition(position);
+        registry->emplace<sage::sgTransform>(id);
+        sys->transformSystem->SetPosition(id, position);
 
         auto& renderable = registry->emplace<sage::Renderable>(id);
         renderable.SetName(name);
@@ -89,7 +88,7 @@ namespace lq
     {
         entt::entity id = registry->create();
 
-        auto& transform = registry->emplace<sage::sgTransform>(id, id);
+        auto& transform = registry->emplace<sage::sgTransform>(id);
         placeActor(registry, id, sys, position);
 
         auto& moveable = registry->emplace<sage::MoveableActor>(id);
@@ -118,9 +117,8 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f);
         auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
         collideable.collisionLayer = sage::CollisionLayer::ENEMY;
-
-        transform.SetRotation(
-            rotation); // TODO: Find out why this must be called after bounding box from collideable is created
+        sys->transformSystem->SetRotation(
+            id, rotation); // TODO: Find out why this must be called after bounding box from collideable is created
 
         registry->emplace<WavemobState>(id);
         return id;
@@ -131,7 +129,7 @@ namespace lq
     {
         entt::entity id = registry->create();
 
-        auto& transform = registry->emplace<sage::sgTransform>(id, id);
+        registry->emplace<sage::sgTransform>(id);
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.03f, 0.03f, 0.03f);
@@ -153,7 +151,7 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
         collideable.collisionLayer = sage::CollisionLayer::NPC;
-        transform.SetRotation(rotation);
+        sys->transformSystem->SetRotation(id, rotation);
         sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
 
         registry->emplace<DialogComponent>(id);
@@ -166,7 +164,7 @@ namespace lq
     {
         entt::entity id = registry->create();
 
-        auto& transform = registry->emplace<sage::sgTransform>(id, id);
+        registry->emplace<sage::sgTransform>(id);
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.035f, 0.035f, 0.035f);
@@ -196,7 +194,7 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
         collideable.collisionLayer = sage::CollisionLayer::NPC;
-        transform.SetRotation(rotation);
+        sys->transformSystem->SetRotation(id, rotation);
         sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
 
         registry->emplace<DialogComponent>(id);
@@ -209,7 +207,7 @@ namespace lq
     {
         entt::entity id = registry->create();
 
-        auto& transform = registry->emplace<sage::sgTransform>(id, id);
+        registry->emplace<sage::sgTransform>(id);
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.035f, 0.035f, 0.035f);
@@ -227,7 +225,7 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 6.5f); // Manually set bounding box dimensions
         auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
         collideable.collisionLayer = sage::CollisionLayer::PLAYER;
-        transform.SetRotation(rotation);
+        sys->transformSystem->SetRotation(id, rotation);
 
         // Set animation hooks
         auto& animation = registry->emplace<sage::Animation>(id, "mdl_player_default");
@@ -272,14 +270,14 @@ namespace lq
         {
             entt::entity id = registry->create();
 
-            auto& transform = registry->emplace<sage::sgTransform>(id, id);
+            registry->emplace<sage::sgTransform>(id);
             sage::GridSquare actorIdx{};
             sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
             float height =
                 sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
-            transform.SetPosition({position.x, 12, position.z});
-            transform.SetScale(1.0f);
-            transform.SetRotation({0, 0, 0});
+            sys->transformSystem->SetPosition(id, {position.x, 12, position.z});
+            sys->transformSystem->SetScale(id, 1.0f);
+            sys->transformSystem->SetRotation(id, {0, 0, 0});
 
             auto& timer = registry->emplace<Timer>(id);
             timer.SetMaxTime(1000000);
@@ -317,13 +315,13 @@ namespace lq
 
         entt::entity id = registry->create();
 
-        auto& transform = registry->emplace<sage::sgTransform>(id, id);
+        registry->emplace<sage::sgTransform>(id);
         sage::GridSquare actorIdx{};
         sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
         float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
-        transform.SetPosition({position.x, height, position.z});
-        transform.SetScale(10.0f);
-        transform.SetRotation({0, 0, 0});
+        sys->transformSystem->SetPosition(id, {position.x, height, position.z});
+        sys->transformSystem->SetScale(id, 10.0f);
+        sys->transformSystem->SetRotation(id, {0, 0, 0});
 
         Matrix modelTransform = MatrixIdentity();
 
@@ -341,13 +339,13 @@ namespace lq
     {
         entt::entity id = registry->create();
 
-        auto& transform = registry->emplace<sage::sgTransform>(id, id);
+        auto& transform = registry->emplace<sage::sgTransform>(id);
         sage::GridSquare actorIdx{};
         sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
         float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
-        transform.SetPosition({position.x, height, position.z});
-        transform.SetScale(1.0f);
-        transform.SetRotation({0, 0, 0});
+        sys->transformSystem->SetPosition(id, {position.x, height, position.z});
+        sys->transformSystem->SetScale(id, 1.0f);
+        sys->transformSystem->SetRotation(id, {0, 0, 0});
 
         Matrix modelTransform = MatrixIdentity();
         auto& renderable = registry->emplace<sage::Renderable>(
@@ -360,16 +358,16 @@ namespace lq
         collideable.collisionLayer = sage::CollisionLayer::BUILDING;
     }
 
-    bool GameObjectFactory::spawnItemInWorld(entt::registry* registry, entt::entity itemId, Vector3 position)
+    bool GameObjectFactory::spawnItemInWorld(
+        entt::registry* registry, Systems* sys, entt::entity itemId, Vector3 position)
     {
         auto& item = registry->get<ItemComponent>(itemId);
         if (item.HasFlag(ItemFlags::QUEST)) return false;
         auto model = sage::ResourceManager::GetInstance().GetModelCopy(item.model);
         // TODO: Need a way to store the matrix scale? Maybe in the resource packer we should store the transform
-        auto& renderable =
-            registry->emplace<sage::Renderable>(itemId, std::move(model), MatrixScale(0.035, 0.035, 0.035));
-        auto& transform = registry->emplace<sage::sgTransform>(itemId, itemId);
-        transform.SetPosition(position);
+        registry->emplace<sage::Renderable>(itemId, std::move(model), MatrixScale(0.035, 0.035, 0.035));
+        const auto& transform = registry->emplace<sage::sgTransform>(itemId);
+        sys->transformSystem->SetPosition(itemId, position);
 
         // TODO: Uber shader? Lit?
 

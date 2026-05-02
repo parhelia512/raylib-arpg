@@ -37,6 +37,7 @@
 #include "engine/systems/RenderSystem.hpp"
 #include "engine/systems/SpatialAudioSystem.hpp"
 #include "engine/systems/TimerSystem.hpp"
+#include "engine/systems/TransformSystem.hpp"
 #include "engine/systems/UberShaderSystem.hpp"
 #include "engine/UserInput.hpp"
 #include "systems/ControllableActorSystem.hpp"

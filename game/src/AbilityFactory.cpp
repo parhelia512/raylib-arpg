@@ -15,6 +15,7 @@
 #include "engine/Cursor.hpp"
 #include "engine/Serializer.hpp"
 #include "engine/systems/ActorMovementSystem.hpp"
+#include "engine/systems/TransformSystem.hpp"
 #include "Systems.hpp"
 #include "systems/states/AbilityStateMachine.hpp"
 
@@ -57,7 +58,7 @@ namespace lq
     {
         entt::entity out = registry->create();
         registry->emplace<AbilityState>(out);
-        registry->emplace<sage::sgTransform>(out, out);
+        registry->emplace<sage::sgTransform>(out);
         abilityMap[caster].emplace(abilityEnum, out);
         auto& ability = registry->emplace<Ability>(out);
         static const std::unordered_map<AbilityEnum, std::function<void(entt::registry*, entt::entity)>>
@@ -98,8 +99,7 @@ namespace lq
 
         if (data.indicatorKey == AbilityIndicatorEnum::CIRCULAR_MAGIC_CURSOR)
         {
-            obj = std::make_unique<AbilityIndicator>(
-                _sys->registry, _sys->navigationGridSystem.get(), "indicator_rainoffire");
+            obj = std::make_unique<AbilityIndicator>(_sys->registry, _sys, "indicator_rainoffire");
         }
         else
         {
@@ -137,24 +137,24 @@ namespace lq
         }
     }
 
-    void createProjectile(entt::registry* registry, entt::entity caster, entt::entity abilityEntity, Systems* data)
+    void createProjectile(entt::registry* registry, entt::entity caster, entt::entity abilityEntity, Systems* sys)
     {
         auto& ad = registry->get<AbilityData>(abilityEntity);
         auto& projectileTrans = registry->get<sage::sgTransform>(abilityEntity);
         auto& casterPos = registry->get<sage::sgTransform>(caster).GetWorldPos();
-        auto point = data->cursor->getFirstNaviCollision().point;
+        auto point = sys->cursor->getFirstNaviCollision().point;
 
         if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CASTER))
         {
-            projectileTrans.SetPosition(casterPos);
+            sys->transformSystem->SetPosition(abilityEntity, casterPos);
         }
         else if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CURSOR))
         {
-            auto cursorPos = data->cursor->getFirstNaviCollision().point;
-            projectileTrans.SetPosition(cursorPos);
+            auto cursorPos = sys->cursor->getFirstNaviCollision().point;
+            sys->transformSystem->SetPosition(abilityEntity, cursorPos);
         }
 
-        data->actorMovementSystem->MoveToLocation(abilityEntity, point);
+        sys->actorMovementSystem->MoveToLocation(abilityEntity, point);
     }
 
     // --------------------------------------------
