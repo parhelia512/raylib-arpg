@@ -29,149 +29,129 @@ namespace lq::maploader
     void SaveMap(entt::registry& source, const char* path)
     {
         std::cout << "START: Saving map data to file." << std::endl;
-        using namespace entt::literals;
-        // std::stringstream storage;
 
-        std::ofstream storage(path, std::ios::binary);
-        if (!storage.is_open())
-        {
-            std::cerr << "ERROR: Unable to open file for writing." << std::endl;
-            exit(1);
-        }
+        sage::serializer::WriteCompressedBinary(
+            path, sage::serializer::kMapBinMagic, [&](cereal::BinaryOutputArchive& output) {
+                sage::ViewSerializer<sage::Spawner> spawnerLoader(&source);
+                output(spawnerLoader);
 
-        {
-            // output finishes flushing its contents when it goes out of scope
-            cereal::BinaryOutputArchive output{storage};
+                sage::ViewSerializer<sage::Light> lightLoader(&source);
+                output(lightLoader);
 
-            sage::ViewSerializer<sage::Spawner> spawnerLoader(&source);
-            output(spawnerLoader);
+                output(sage::ResourceManager::GetInstance());
 
-            sage::ViewSerializer<sage::Light> lightLoader(&source);
-            output(lightLoader);
+                // Note: ViewSerializer creates separate entities per component type, so it can't
+                // reconstruct multi-component entities (Renderable+Collideable+sgTransform must share
+                // one entity). Per-entity serialization is used instead.
+                const auto itemView =
+                    source.view<sage::Renderable, sage::sgTransform, sage::Collideable, ItemComponent>();
+                unsigned int itemCount = 0;
+                for (const auto& entity : itemView)
+                    ++itemCount;
+                output(itemCount);
 
-            output(sage::ResourceManager::GetInstance());
+                for (const auto& ent : itemView)
+                {
+                    const auto& rend = source.get<sage::Renderable>(ent);
+                    const auto& trans = source.get<sage::sgTransform>(ent);
+                    const auto& col = source.get<sage::Collideable>(ent);
+                    const auto& item = source.get<ItemComponent>(ent);
 
-            // Note: ViewSerializer creates separate entities per component type, so it can't reconstruct
-            // multi-component entities (Renderable+Collideable+sgTransform must share one entity).
-            // Per-entity serialization is used instead.
-            const auto itemView =
-                source.view<sage::Renderable, sage::sgTransform, sage::Collideable, ItemComponent>();
-            unsigned int itemCount = 0;
-            for (const auto& entity : itemView)
-                ++itemCount;
-            output(itemCount);
+                    sage::serializer::entity entity{};
+                    entity.id = entt::entt_traits<entt::entity>::to_entity(ent);
+                    output(entity, trans, col, rend, item);
+                }
 
-            for (const auto& ent : itemView)
-            {
-                const auto& rend = source.get<sage::Renderable>(ent);
-                const auto& trans = source.get<sage::sgTransform>(ent);
-                const auto& col = source.get<sage::Collideable>(ent);
-                const auto& item = source.get<ItemComponent>(ent);
+                const auto view = source.view<sage::sgTransform, sage::Renderable, sage::Collideable>(
+                    entt::exclude<ItemComponent>);
+                for (const auto& ent : view)
+                {
+                    const auto& rend = view.get<sage::Renderable>(ent);
+                    const auto& trans = view.get<sage::sgTransform>(ent);
+                    const auto& col = view.get<sage::Collideable>(ent);
 
-                sage::serializer::entity entity{};
-                entity.id = entt::entt_traits<entt::entity>::to_entity(ent);
-                output(entity, trans, col, rend, item);
-            }
+                    sage::serializer::entity entity{};
+                    entity.id = entt::entt_traits<entt::entity>::to_entity(ent);
+                    output(entity, trans, col, rend);
+                }
+            });
 
-            const auto view =
-                source.view<sage::sgTransform, sage::Renderable, sage::Collideable>(entt::exclude<ItemComponent>);
-            for (const auto& ent : view)
-            {
-                const auto& rend = view.get<sage::Renderable>(ent);
-                const auto& trans = view.get<sage::sgTransform>(ent);
-                const auto& col = view.get<sage::Collideable>(ent);
-
-                sage::serializer::entity entity{};
-                entity.id = entt::entt_traits<entt::entity>::to_entity(ent);
-                output(entity, trans, col, rend);
-            }
-        }
-        storage.close();
         std::cout << "FINISH: Saving map data to file." << std::endl;
     }
 
     void LoadMap(entt::registry* destination, const char* path)
     {
         assert(destination != nullptr);
-
         std::cout << "START: Loading map data from file." << std::endl;
 
-        using namespace entt::literals;
-        std::ifstream storage(path, std::ios::binary);
-        if (!storage.is_open())
-        {
-            std::cerr << "ERROR: Unable to open file for reading." << std::endl;
-            exit(1);
-        }
+        sage::serializer::ReadCompressedBinary(
+            path,
+            sage::serializer::kMapBinMagic,
+            [&](cereal::BinaryInputArchive& input, std::istream& stream) {
+                sage::ViewSerializer<sage::Spawner> spawnerLoader(destination);
+                input(spawnerLoader);
 
-        {
-            cereal::BinaryInputArchive input(storage);
+                sage::ViewSerializer<sage::Light> lightLoader(destination);
+                input(lightLoader);
 
-            sage::ViewSerializer<sage::Spawner> spawnerLoader(destination);
-            input(spawnerLoader);
+                input(sage::ResourceManager::GetInstance());
 
-            sage::ViewSerializer<sage::Light> lightLoader(destination);
-            input(lightLoader);
+                unsigned int itemCount;
+                input(itemCount);
 
-            input(sage::ResourceManager::GetInstance());
-
-            unsigned int itemCount;
-            input(itemCount);
-
-            for (unsigned int i = 0; i < itemCount; ++i)
-            {
-                auto entt = destination->create();
-                sage::serializer::entity entityId{}; // ignore this (old serialized entity)
-                auto& transform = destination->emplace<sage::sgTransform>(entt);
-                auto& collideable = destination->emplace<sage::Collideable>(entt);
-                auto& renderable = destination->emplace<sage::Renderable>(entt);
-                auto& item = destination->emplace<ItemComponent>(entt);
-
-                try
+                for (unsigned int i = 0; i < itemCount; ++i)
                 {
-                    input(entityId, transform, collideable, renderable, item);
-                }
-                catch (const cereal::Exception& e)
-                {
-                    std::cerr << "ERROR: Serialization error: " << e.what() << std::endl;
-                    break;
-                }
-            }
+                    auto entt = destination->create();
+                    sage::serializer::entity entityId{}; // ignore this (old serialized entity)
+                    auto& transform = destination->emplace<sage::sgTransform>(entt);
+                    auto& collideable = destination->emplace<sage::Collideable>(entt);
+                    auto& renderable = destination->emplace<sage::Renderable>(entt);
+                    auto& item = destination->emplace<ItemComponent>(entt);
 
-            while (storage.peek() != EOF)
-            {
-                sage::serializer::entity entityId{}; // ignore this (old serialized entity)
-                auto entt = destination->create();
-                auto& transform = destination->emplace<sage::sgTransform>(entt);
-                auto& collideable = destination->emplace<sage::Collideable>(entt);
-                auto& renderable = destination->emplace<sage::Renderable>(entt);
-
-                try
-                {
-                    input(entityId, transform, collideable, renderable);
-                }
-                catch (const cereal::Exception& e)
-                {
-                    std::cerr << "ERROR: Serialization error: " << e.what() << std::endl;
-                    break;
+                    try
+                    {
+                        input(entityId, transform, collideable, renderable, item);
+                    }
+                    catch (const cereal::Exception& e)
+                    {
+                        std::cerr << "ERROR: Serialization error: " << e.what() << std::endl;
+                        break;
+                    }
                 }
 
-                if (renderable.GetName().find("_DOOR_") != std::string::npos)
+                while (stream.peek() != EOF)
                 {
-                    destination->emplace<sage::DoorBehaviorComponent>(entt);
-                }
-                if (renderable.GetName().find("_INTERACTABLE_") != std::string::npos)
-                {
-                    destination->emplace<DialogComponent>(entt);
-                }
-                if (renderable.GetName().find("_CHEST_") != std::string::npos)
-                {
-                    destination->emplace<InventoryComponent>(entt);
-                }
-            }
-        }
+                    sage::serializer::entity entityId{}; // ignore this (old serialized entity)
+                    auto entt = destination->create();
+                    auto& transform = destination->emplace<sage::sgTransform>(entt);
+                    auto& collideable = destination->emplace<sage::Collideable>(entt);
+                    auto& renderable = destination->emplace<sage::Renderable>(entt);
 
-        storage.close();
+                    try
+                    {
+                        input(entityId, transform, collideable, renderable);
+                    }
+                    catch (const cereal::Exception& e)
+                    {
+                        std::cerr << "ERROR: Serialization error: " << e.what() << std::endl;
+                        break;
+                    }
+
+                    if (renderable.GetName().find("_DOOR_") != std::string::npos)
+                    {
+                        destination->emplace<sage::DoorBehaviorComponent>(entt);
+                    }
+                    if (renderable.GetName().find("_INTERACTABLE_") != std::string::npos)
+                    {
+                        destination->emplace<DialogComponent>(entt);
+                    }
+                    if (renderable.GetName().find("_CHEST_") != std::string::npos)
+                    {
+                        destination->emplace<InventoryComponent>(entt);
+                    }
+                }
+            });
+
         std::cout << "FINISH: Loading map data from file." << std::endl;
     }
 } // namespace lq::maploader
