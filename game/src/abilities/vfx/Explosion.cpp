@@ -41,9 +41,12 @@ namespace lq
         auto sphere = LoadModelFromMesh(GenMeshHemiSphere(1.0f, 16, 16));
         entity = registry->create();
         registry->emplace<sage::sgTransform>(entity);
-        auto& renderable = registry->emplace<sage::Renderable>(entity, sage::ModelSafe(sphere), MatrixIdentity());
+        auto& renderable =
+            registry->emplace<sage::Renderable>(entity, sage::ModelSafeUnique(sphere), MatrixIdentity());
         renderable.hint = Color{255, 0, 0, 100};
-        renderable.GetModel()->SetShader(
-            sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/base.fs"), 0);
+        // Procedural Renderable holds a ModelSafeUnique; downcast to reach public SetShader.
+        static_cast<sage::ModelSafeUnique*>(renderable.GetModel())
+            ->SetShader(
+                sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/base.fs"), 0);
     }
 } // namespace lq

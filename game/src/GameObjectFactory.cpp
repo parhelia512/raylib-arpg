@@ -95,8 +95,11 @@ namespace lq
         moveable.movementSpeed = 0.25f;
 
         Matrix modelTransform = MatrixScale(0.03f, 0.03f, 0.03f);
+        const std::string dstKey = "mdl_goblin#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin"), modelTransform);
+            id,
+            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey),
+            modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -133,8 +136,11 @@ namespace lq
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.03f, 0.03f, 0.03f);
+        const std::string dstKey = "mdl_goblin#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin"), modelTransform);
+            id,
+            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey),
+            modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -168,8 +174,11 @@ namespace lq
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.035f, 0.035f, 0.035f);
+        const std::string dstKey = "mdl_player_default#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_player_default"), modelTransform);
+            id,
+            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_player_default", dstKey),
+            modelTransform);
         renderable.SetName("Arissa");
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -211,8 +220,11 @@ namespace lq
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.035f, 0.035f, 0.035f);
+        const std::string dstKey = "mdl_player_default#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_player_default"), modelTransform);
+            id,
+            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_player_default", dstKey),
+            modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -289,17 +301,20 @@ namespace lq
             Matrix modelTransform = MatrixRotateX(90 * DEG2RAD);
 
             Model tmp_model = LoadModelFromMesh(GenMeshPlane(20, 20, 1, 1));
-            sage::ModelSafe model(tmp_model);
+            sage::ModelSafeUnique model(tmp_model);
             auto& renderable = registry->emplace<sage::Renderable>(id, std::move(model), modelTransform);
             renderable.SetName("Portal");
 
             Shader shader =
                 sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/custom/portal.fs");
             int secondsLoc = GetShaderLocation(shader, "seconds");
-            renderable.GetModel()->SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
-            renderable.GetModel()->SetTexture(texture2, 0, MATERIAL_MAP_EMISSION);
+            // Renderable holds a ModelSafeUnique here; downcast via static_cast lets us reach the
+            // public mutators without going through ModelSafe's friend-only SetShader.
+            auto* uniqueModel = static_cast<sage::ModelSafeUnique*>(renderable.GetModel());
+            uniqueModel->SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
+            uniqueModel->SetTexture(texture2, 0, MATERIAL_MAP_EMISSION);
             shader.locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation(shader, "texture1");
-            renderable.GetModel()->SetShader(shader, 0);
+            uniqueModel->SetShader(shader, 0);
 
             renderable.reqShaderUpdate = [sys, secondsLoc](entt::entity entity) -> void {
                 auto& r = sys->registry->get<sage::Renderable>(entity);

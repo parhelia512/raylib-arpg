@@ -59,7 +59,9 @@ namespace lq
         // SetShaderValue(shader, secondsLoc, &time, SHADER_UNIFORM_FLOAT);
         // shader.locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation(shader, "texture1");
 
-        slashModel = sage::ResourceManager::GetInstance().GetModelDeepCopy("vfx_flattorus");
+        const std::string dstKey =
+            "vfx_flattorus#whirlwind#" + std::to_string(reinterpret_cast<uintptr_t>(this));
+        slashModel = sage::ResourceManager::GetInstance().GetModelDeepCopy("vfx_flattorus", dstKey);
         slashModel.SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
         slashModel.SetShader(shader, 0);
     }

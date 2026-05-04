@@ -21,7 +21,7 @@ namespace lq
         int secondsLoc;
 
         float time = 0.0f;
-        sage::ModelSafe slashModel;
+        sage::ModelSafeUnique slashModel;
 
       public:
         void InitSystem() override;
