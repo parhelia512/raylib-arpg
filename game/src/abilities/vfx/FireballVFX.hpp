@@ -20,7 +20,7 @@ namespace lq
 
         Vector3 origin{};
         float time = 0.0f;
-        sage::ModelSafeUnique model;
+        sage::ModelSafeManaged model;
 
       public:
         const sage::ModelSafe& GetModel();

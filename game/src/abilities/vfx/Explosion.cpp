@@ -42,10 +42,10 @@ namespace lq
         entity = registry->create();
         registry->emplace<sage::sgTransform>(entity);
         auto& renderable =
-            registry->emplace<sage::Renderable>(entity, sage::ModelSafeUnique(sphere), MatrixIdentity());
+            registry->emplace<sage::Renderable>(entity, sage::ModelSafeOwned(sphere), MatrixIdentity());
         renderable.hint = Color{255, 0, 0, 100};
-        // Procedural Renderable holds a ModelSafeUnique; downcast to reach public SetShader.
-        static_cast<sage::ModelSafeUnique*>(renderable.GetModel())
+        // Procedural Renderable holds a ModelSafeOwned; downcast to reach public SetShader.
+        static_cast<sage::ModelSafeOwned*>(renderable.GetModel())
             ->SetShader(
                 sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/base.fs"), 0);
     }

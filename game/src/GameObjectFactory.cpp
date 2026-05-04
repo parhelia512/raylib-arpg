@@ -301,20 +301,20 @@ namespace lq
             Matrix modelTransform = MatrixRotateX(90 * DEG2RAD);
 
             Model tmp_model = LoadModelFromMesh(GenMeshPlane(20, 20, 1, 1));
-            sage::ModelSafeUnique model(tmp_model);
+            sage::ModelSafeOwned model(tmp_model);
             auto& renderable = registry->emplace<sage::Renderable>(id, std::move(model), modelTransform);
             renderable.SetName("Portal");
 
             Shader shader =
                 sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/custom/portal.fs");
             int secondsLoc = GetShaderLocation(shader, "seconds");
-            // Renderable holds a ModelSafeUnique here; downcast via static_cast lets us reach the
-            // public mutators without going through ModelSafe's friend-only SetShader.
-            auto* uniqueModel = static_cast<sage::ModelSafeUnique*>(renderable.GetModel());
-            uniqueModel->SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
-            uniqueModel->SetTexture(texture2, 0, MATERIAL_MAP_EMISSION);
+            // Renderable holds a ModelSafeOwned here; downcast lets us reach the public mutators
+            // without going through ModelSafe's friend-only SetShader.
+            auto* ownedModel = static_cast<sage::ModelSafeOwned*>(renderable.GetModel());
+            ownedModel->SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
+            ownedModel->SetTexture(texture2, 0, MATERIAL_MAP_EMISSION);
             shader.locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation(shader, "texture1");
-            uniqueModel->SetShader(shader, 0);
+            ownedModel->SetShader(shader, 0);
 
             renderable.reqShaderUpdate = [sys, secondsLoc](entt::entity entity) -> void {
                 auto& r = sys->registry->get<sage::Renderable>(entity);
