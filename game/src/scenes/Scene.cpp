@@ -126,7 +126,6 @@ namespace lq
         sys->collisionSystem->Update();
         sys->controllableActorSystem->Update();
         sys->healthBarSystem->Update();
-        sys->timerSystem->Update();
         sys->animationSystem->Update();
         sys->contextualDialogSystem->Update();
         sys->spatialAudioSystem->Update();
