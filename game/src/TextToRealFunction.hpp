@@ -83,7 +83,7 @@ namespace lq::parsing
                 }
                 if (registry->any_of<sage::Collideable>(itemId))
                 {
-                    registry->get<sage::Collideable>(itemId).Disable();
+                    registry->get<sage::Collideable>(itemId).active = false;
                 }
             });
         }

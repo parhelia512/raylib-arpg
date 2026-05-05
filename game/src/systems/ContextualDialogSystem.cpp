@@ -159,17 +159,18 @@ namespace lq
     // based on `distance` (declared in the trigger's file).
     void ContextualDialogSystem::Update() const
     {
-        for (const auto view =
-                 registry->view<sage::sgTransform, ContextualDialogTriggerComponent, sage::Renderable>();
+        for (const auto view = registry->view<
+                               sage::sgTransform,
+                               sage::Collideable,
+                               ContextualDialogTriggerComponent,
+                               sage::Renderable>();
              auto entity : view)
         {
             auto& trigger = registry->get<ContextualDialogTriggerComponent>(entity);
             const auto speaker = trigger.speaker;
             const auto playerPos = registry->get<sage::sgTransform>(sys->cursor->GetSelectedActor()).GetWorldPos();
 
-            // As the contextual object could be a static mesh, using its collideable (which goes off the model's
-            // vertex data) is a safer idea.
-            const auto& col = registry->get<sage::Collideable>(entity);
+            const auto& col = view.get<sage::Collideable>(entity);
             auto center =
                 sage::Vector3MultiplyByValue(Vector3Add(col.worldBoundingBox.max, col.worldBoundingBox.min), 0.5f);
 
@@ -200,9 +201,10 @@ namespace lq
 
     void ContextualDialogSystem::Draw2D() const
     {
-        for (const auto view = registry->view<sage::OverheadDialogComponent>(); const auto& entity : view)
+        for (const auto view = registry->view<sage::OverheadDialogComponent, sage::Collideable>();
+             const auto& entity : view)
         {
-            const auto& col = registry->get<sage::Collideable>(entity);
+            const auto& col = view.get<sage::Collideable>(entity);
             auto [width, height] = sys->settings->GetViewPort();
             auto center =
                 sage::Vector3MultiplyByValue(Vector3Add(col.worldBoundingBox.max, col.worldBoundingBox.min), 0.5f);

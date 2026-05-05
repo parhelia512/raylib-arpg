@@ -97,9 +97,7 @@ namespace lq
         Matrix modelTransform = MatrixScale(0.03f, 0.03f, 0.03f);
         const std::string dstKey = "mdl_goblin#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id,
-            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey),
-            modelTransform);
+            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey), modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -118,7 +116,8 @@ namespace lq
         registry->emplace<HealthBar>(id);
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f);
-        auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
+        auto& collideable =
+            registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.collisionLayer = sage::CollisionLayer::ENEMY;
         sys->transformSystem->SetRotation(
             id, rotation); // TODO: Find out why this must be called after bounding box from collideable is created
@@ -138,9 +137,7 @@ namespace lq
         Matrix modelTransform = MatrixScale(0.03f, 0.03f, 0.03f);
         const std::string dstKey = "mdl_goblin#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id,
-            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey),
-            modelTransform);
+            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey), modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -155,7 +152,8 @@ namespace lq
         animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
-        auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
+        auto& collideable =
+            registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.collisionLayer = sage::CollisionLayer::NPC;
         sys->transformSystem->SetRotation(id, rotation);
         sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
@@ -201,7 +199,8 @@ namespace lq
         animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
-        auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
+        auto& collideable =
+            registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.collisionLayer = sage::CollisionLayer::NPC;
         sys->transformSystem->SetRotation(id, rotation);
         sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
@@ -235,7 +234,8 @@ namespace lq
         moveable.pathfindingBounds = 100;
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 6.5f); // Manually set bounding box dimensions
-        auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
+        auto& collideable =
+            registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.collisionLayer = sage::CollisionLayer::PLAYER;
         sys->transformSystem->SetRotation(id, rotation);
 
@@ -324,8 +324,10 @@ namespace lq
             };
 
             BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
-            auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
+            auto& collideable = registry->emplace<sage::Collideable>(
+                id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
             collideable.collisionLayer = sage::CollisionLayer::BUILDING;
+            registry->emplace<sage::StaticCollideable>(id);
         }
 
         entt::entity id = registry->create();
@@ -346,8 +348,10 @@ namespace lq
         sys->lightSubSystem->LinkRenderableToLight(id);
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
-        auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
+        auto& collideable =
+            registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.collisionLayer = sage::CollisionLayer::BUILDING;
+        registry->emplace<sage::StaticCollideable>(id);
     }
 
     void GameObjectFactory::createWizardTower(entt::registry* registry, Systems* sys, Vector3 position)
@@ -369,8 +373,10 @@ namespace lq
         sys->lightSubSystem->LinkRenderableToLight(id);
 
         BoundingBox bb = renderable.GetModel()->CalcLocalBoundingBox();
-        auto& collideable = registry->emplace<sage::Collideable>(id, registry, id, bb);
+        auto& collideable =
+            registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.collisionLayer = sage::CollisionLayer::BUILDING;
+        registry->emplace<sage::StaticCollideable>(id);
     }
 
     bool GameObjectFactory::spawnItemInWorld(
@@ -389,6 +395,7 @@ namespace lq
         auto& collideable = registry->emplace<sage::Collideable>(
             itemId, createRectangularBoundingBox(2.0, 2.0), transform.GetMatrixNoRot());
         collideable.collisionLayer = sage::CollisionLayer::ITEM;
+        registry->emplace<sage::StaticCollideable>(itemId);
         return true;
     }
 
