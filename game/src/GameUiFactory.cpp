@@ -177,16 +177,20 @@ namespace lq
     sage::TooltipWindow* GameUiFactory::CreateWorldTooltip(
         LeverUIEngine* engine, const std::string& name, Vector2 pos)
     {
+        // Build everything in viewport-coord since TooltipWindow::ScaleContents is
+        // a no-op (see UIWindow.cpp). textSize from MeasureTextEx is already in
+        // viewport pixels; padding is target-coord scaled to match.
+        const float scaleFactor = engine->sys->settings->GetCurrentScaleFactor();
 
-        // Set window's dimensions to the size of the text
-        sage::Padding padding = {10, 10, 10, 20};
+        const sage::Padding padding{
+            10.0f * scaleFactor, 10.0f * scaleFactor, 10.0f * scaleFactor, 20.0f * scaleFactor};
 
         sage::TextBox::FontInfo _fontInfo{};
         _fontInfo.overflowBehaviour = sage::TextBox::OverflowBehaviour::SHRINK_TO_FIT;
-        float scaleFactor = engine->sys->settings->GetCurrentScaleFactor();
-        _fontInfo.fontSize = _fontInfo.baseFontSize * scaleFactor;
         _fontInfo.fontSize = std::clamp(
-            _fontInfo.fontSize, sage::TextBox::FontInfo::minFontSize, sage::TextBox::FontInfo::maxFontSize);
+            _fontInfo.baseFontSize * scaleFactor,
+            sage::TextBox::FontInfo::minFontSize,
+            sage::TextBox::FontInfo::maxFontSize);
 
         Vector2 textSize = MeasureTextEx(_fontInfo.font, name.c_str(), _fontInfo.fontSize, _fontInfo.fontSpacing);
         auto w = textSize.x + padding.left + padding.right;
@@ -222,81 +226,99 @@ namespace lq
         return window;
     }
 
+    namespace
+    {
+        // Builds a "header + word-wrapped body" tooltip in viewport-coord. The
+        // tooltip is sized to fit its rendered text — the previous fixed
+        // "10% of TARGET_SCREEN_HEIGHT" sizing overflowed long descriptions
+        // on smaller-than-target viewports.
+        //
+        // Why viewport-coord throughout: TooltipWindow::ScaleContents is a no-op
+        // and doesn't recurse into children (unlike Window::ScaleContents).
+        // Building both the tooltip and its children in viewport-coord from the
+        // start is the simplest way to keep them aligned.
+        sage::TooltipWindow* createTextTooltip(
+            sage::GameUIEngine* engine,
+            sage::Window* parentWindow,
+            const std::string& header,
+            const std::string& body,
+            Vector2 pos)
+        {
+            sage::TextBox::FontInfo fontInfo{};
+            fontInfo.overflowBehaviour = sage::TextBox::OverflowBehaviour::WORD_WRAP;
+            const float scaleFactor = engine->settings->GetCurrentScaleFactor();
+            // Match UpdateFontScaling's clamp so the pre-measure produces the same
+            // line breaks UpdateDimensions will at runtime.
+            fontInfo.fontSize = std::clamp(
+                fontInfo.baseFontSize * scaleFactor,
+                sage::TextBox::FontInfo::minFontSize,
+                sage::TextBox::FontInfo::maxFontSize);
+
+            // Padding/width in viewport-coord (target-coord scaled by scaleFactor).
+            const sage::Padding tooltipPadding{
+                20.0f * scaleFactor,
+                20.0f * scaleFactor,
+                10.0f * scaleFactor,
+                6.0f * scaleFactor};
+            const float w = sage::Settings::TARGET_SCREEN_WIDTH * 0.15f * scaleFactor;
+            const float availableTextWidth = w - tooltipPadding.left - tooltipPadding.right;
+
+            // Both measurements come back in viewport pixels; we keep everything
+            // in viewport-coord from here on.
+            const Vector2 headerSize =
+                MeasureTextEx(fontInfo.font, header.c_str(), fontInfo.fontSize, fontInfo.fontSpacing);
+            const float bodyHeight = sage::TextBox::WrappedHeight(fontInfo, body, availableTextWidth);
+
+            const float rowGap = 10.0f * scaleFactor;
+            const float h = tooltipPadding.up + headerSize.y + rowGap + bodyHeight + tooltipPadding.down;
+
+            auto nPatchTexture =
+                sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ninepatch_button.png");
+            auto tooltip = std::make_unique<sage::TooltipWindow>(
+                engine->settings,
+                parentWindow,
+                nPatchTexture,
+                sage::TextureStretchMode::NONE,
+                pos.x,
+                pos.y,
+                w,
+                h,
+                tooltipPadding);
+            auto* window = engine->CreateTooltipWindow(std::move(tooltip));
+            window->nPatchInfo = {Rectangle{0.0f, 64.0f, 64.0f, 64.0f}, 8, 8, 8, 8, NPATCH_NINE_PATCH};
+
+            // Split the inner height between header and body in the same proportion
+            // they need; row1 (auto-sized) takes whatever's left.
+            const float innerH = h - tooltipPadding.up - tooltipPadding.down;
+            const float row0Pct = innerH > 0.0f ? (headerSize.y / innerH) * 100.0f : 0.0f;
+
+            auto table = window->CreateTable();
+            auto row0 = table->CreateTableRow(row0Pct);
+            auto cell0 = row0->CreateTableCell();
+            auto headerTextbox =
+                std::make_unique<sage::TextBox>(engine, cell0, fontInfo, sage::VertAlignment::BOTTOM);
+            cell0->CreateTextbox(std::move(headerTextbox), header);
+            auto row = table->CreateTableRow({rowGap, 0, 0, 0});
+            auto cell = row->CreateTableCell();
+            auto bodyTextbox = std::make_unique<sage::TextBox>(engine, cell, fontInfo);
+            cell->CreateTextbox(std::move(bodyTextbox), body);
+
+            window->FinalizeLayout();
+            return window;
+        }
+    } // namespace
+
     sage::TooltipWindow* GameUiFactory::CreateItemTooltip(
         sage::GameUIEngine* engine, const ItemComponent& item, sage::Window* parentWindow, Vector2 pos)
     {
-        auto nPatchTexture =
-            sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ninepatch_button.png");
-        auto w = sage::Settings::TARGET_SCREEN_WIDTH * 0.15;
-        auto h = sage::Settings::TARGET_SCREEN_HEIGHT * 0.1;
-        auto tooltip = std::make_unique<sage::TooltipWindow>(
-            engine->settings,
-            parentWindow,
-            nPatchTexture,
-            sage::TextureStretchMode::NONE,
-            pos.x,
-            pos.y,
-            w,
-            h,
-            sage::Padding{20, 20, 10, 6});
-        auto* window = engine->CreateTooltipWindow(std::move(tooltip));
-
-        window->nPatchInfo = {Rectangle{0.0f, 64.0f, 64.0f, 64.0f}, 8, 8, 8, 8, NPATCH_NINE_PATCH};
-        {
-            auto table = window->CreateTable();
-            auto row0 = table->CreateTableRow(10);
-            auto cell0 = row0->CreateTableCell();
-            sage::TextBox::FontInfo _fontInfo{};
-            _fontInfo.overflowBehaviour = sage::TextBox::OverflowBehaviour::WORD_WRAP;
-            auto headerTextbox =
-                std::make_unique<sage::TextBox>(engine, cell0, _fontInfo, sage::VertAlignment::BOTTOM);
-            cell0->CreateTextbox(std::move(headerTextbox), item.localizedName);
-            auto row = table->CreateTableRow({10, 0, 0, 0});
-            auto cell = row->CreateTableCell();
-            auto bodyTextbox = std::make_unique<sage::TextBox>(engine, cell, _fontInfo);
-            cell->CreateTextbox(std::move(bodyTextbox), item.description);
-        }
-        window->FinalizeLayout();
-        return window;
+        return createTextTooltip(engine, parentWindow, item.localizedName, item.description, pos);
     }
 
     sage::TooltipWindow* GameUiFactory::CreateAbilityToolTip(
         sage::GameUIEngine* engine, const Ability& ability, Vector2 pos)
     {
-        auto nPatchTexture =
-            sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ninepatch_button.png");
-        auto w = sage::Settings::TARGET_SCREEN_WIDTH * 0.15;
-        auto h = sage::Settings::TARGET_SCREEN_HEIGHT * 0.1;
-        auto tooltip = std::make_unique<sage::TooltipWindow>(
-            engine->settings,
-            nullptr,
-            nPatchTexture,
-            sage::TextureStretchMode::NONE,
-            pos.x,
-            pos.y,
-            w,
-            h,
-            sage::Padding{20, 20, 10, 6});
-        auto* window = engine->CreateTooltipWindow(std::move(tooltip));
-
-        window->nPatchInfo = {Rectangle{0.0f, 64.0f, 64.0f, 64.0f}, 8, 8, 8, 8, NPATCH_NINE_PATCH};
-        {
-            const auto& ad = engine->registry->get<AbilityData>(ability.self);
-            auto table = window->CreateTable();
-            auto row0 = table->CreateTableRow(10);
-            auto cell0 = row0->CreateTableCell();
-            sage::TextBox::FontInfo _fontInfo{};
-            _fontInfo.overflowBehaviour = sage::TextBox::OverflowBehaviour::WORD_WRAP;
-            auto headerTextbox =
-                std::make_unique<sage::TextBox>(engine, cell0, _fontInfo, sage::VertAlignment::BOTTOM);
-            cell0->CreateTextbox(std::move(headerTextbox), ad.name);
-            auto row = table->CreateTableRow({10, 0, 0, 0});
-            auto cell = row->CreateTableCell();
-            auto bodyTextbox = std::make_unique<sage::TextBox>(engine, cell, _fontInfo);
-            cell->CreateTextbox(std::move(bodyTextbox), ad.description);
-        }
-        window->FinalizeLayout();
-        return window;
+        const auto& ad = engine->registry->get<AbilityData>(ability.self);
+        return createTextTooltip(engine, nullptr, ad.name, ad.description, pos);
     }
 
     sage::Window* GameUiFactory::CreateLootWindow(
