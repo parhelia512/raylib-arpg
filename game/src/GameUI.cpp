@@ -460,16 +460,8 @@ namespace lq
 
     void AbilitySlot::RetrieveInfo()
     {
-        if (const Ability* ability = playerAbilitySystem->GetAbility(slotNumber))
-        {
-            tex = sage::ResourceManager::GetInstance().TextureLoad(ability->icon);
-            stateLocked = false;
-        }
-        else
-        {
-            stateLocked = true;
-            tex = sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/empty-inv_slot.png");
-        }
+        if (iconProvider) tex = iconProvider();
+        if (isInteractiveProvider) stateLocked = !isInteractiveProvider();
         UpdateDimensions();
     }
 
@@ -477,9 +469,7 @@ namespace lq
     {
         if (auto* dropped = dynamic_cast<AbilitySlot*>(droppedElement))
         {
-            playerAbilitySystem->SwapAbility(slotNumber, dropped->slotNumber);
-            dropped->RetrieveInfo();
-            RetrieveInfo();
+            onSwapRequested.Publish(dropped);
         }
     }
 
@@ -491,24 +481,22 @@ namespace lq
         }
         ImageBox::HoverUpdate();
         if (tooltipWindow.has_value() || GetTime() < hoverTimer + hoverTimerThreshold) return;
-        if (const auto* ability = playerAbilitySystem->GetAbility(slotNumber))
+        if (tooltipFactory)
         {
-            tooltipWindow = GameUiFactory::CreateAbilityToolTip(engine, *ability, {rec.x, rec.y});
-            const auto _rec = tooltipWindow.value()->GetRec();
-            tooltipWindow.value()->SetPos(_rec.x, _rec.y - _rec.height);
-            tooltipWindow.value()->InitLayout();
+            if (auto* tt = tooltipFactory({rec.x, rec.y}))
+            {
+                tooltipWindow = tt;
+                const auto _rec = tt->GetRec();
+                tt->SetPos(_rec.x, _rec.y - _rec.height);
+                tt->InitLayout();
+            }
         }
     }
 
     void AbilitySlot::Draw2D()
     {
-        const auto ability = playerAbilitySystem->GetAbility(slotNumber);
-        if (!ability)
-        {
-            ImageBox::Draw2D();
-            return;
-        }
-        if (ability->CooldownReady())
+        const bool ready = !cooldownReadyProvider || cooldownReadyProvider();
+        if (ready)
         {
             ImageBox::Draw2D();
         }
@@ -522,7 +510,7 @@ namespace lq
 
     void AbilitySlot::OnClick()
     {
-        playerAbilitySystem->PressAbility(slotNumber);
+        onClicked.Publish();
         CellElement::OnClick();
     }
 
@@ -533,12 +521,14 @@ namespace lq
               OverflowBehaviour::SHRINK_ROW_TO_FIT,
               sage::VertAlignment::MIDDLE,
               sage::HoriAlignment::CENTER),
-          playerAbilitySystem(_engine->sys->playerAbilitySystem.get()),
           slotNumber(_slotNumber)
     {
         draggable = true;
         canReceiveDragDrops = true;
-        engine->cursor->onSelectedActorChange.Subscribe([this](entt::entity, entt::entity) { RetrieveInfo(); });
+        // Providers and event handlers are wired by the factory (see
+        // GameUiFactory::CreateAbilityRow). Until they are, RetrieveInfo, Draw2D,
+        // HoverUpdate are all defensive (null-checked) and OnClick / ReceiveDrop
+        // simply fan out to subscribers — no game-system access happens here.
     }
 
     Texture ItemSlot::getEmptyTex()

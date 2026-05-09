@@ -11,6 +11,8 @@
 #include "entt/entt.hpp"
 #include "raylib.h"
 
+#include <functional>
+
 namespace lq
 {
     class LeverUIEngine;
@@ -168,10 +170,22 @@ namespace lq
 
     class AbilitySlot : public sage::ImageBox
     {
-        PlayerAbilitySystem* playerAbilitySystem;
+      public:
+        // Identity tag used by the factory to wire callbacks, and by drag/drop to
+        // distinguish source slots in a swap. Pure data — no system coupling.
         unsigned int slotNumber{};
 
-      public:
+        // Providers — caller (factory) supplies these to bridge to whichever game
+        // system owns the underlying data. Slot calls them on demand.
+        std::function<Texture()> iconProvider;
+        std::function<bool()> isInteractiveProvider;
+        std::function<bool()> cooldownReadyProvider;
+        std::function<sage::TooltipWindow*(Vector2 pos)> tooltipFactory;
+
+        // Events — factory subscribes to these to perform game-side effects.
+        sage::Event<> onClicked;
+        sage::Event<AbilitySlot*> onSwapRequested;
+
         void RetrieveInfo() override;
         void ReceiveDrop(CellElement* droppedElement) override;
         void HoverUpdate() override;
