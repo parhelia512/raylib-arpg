@@ -114,7 +114,7 @@ namespace lq
         auto w = portraitWidth;
         auto h = portraitHeight * PARTY_MEMBER_MAX;
         auto _windowDocked = std::make_unique<sage::WindowDocked>(
-            engine->sys->settings, 16, 16, w, h, sage::VertAlignment::TOP, sage::HoriAlignment::LEFT);
+            engine->sys->engine.settings, 16, 16, w, h, sage::VertAlignment::TOP, sage::HoriAlignment::LEFT);
         auto* window = engine->CreateWindowDocked(std::move(_windowDocked));
         auto table = window->CreateTable();
 
@@ -140,7 +140,7 @@ namespace lq
         auto w = 1024; // Absolute value of the image
         auto h = 156;
         auto _windowDocked = std::make_unique<sage::WindowDocked>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             nPatchTexture,
             sage::TextureStretchMode::STRETCH,
             0,
@@ -188,7 +188,7 @@ namespace lq
         // Build everything in viewport-coord since TooltipWindow::ScaleContents is
         // a no-op (see UIWindow.cpp). textSize from MeasureTextEx is already in
         // viewport pixels; padding is target-coord scaled to match.
-        const float scaleFactor = engine->sys->settings->GetCurrentScaleFactor();
+        const float scaleFactor = engine->sys->engine.settings->GetCurrentScaleFactor();
 
         const sage::Padding padding{
             10.0f * scaleFactor, 10.0f * scaleFactor, 10.0f * scaleFactor, 20.0f * scaleFactor};
@@ -208,7 +208,7 @@ namespace lq
             sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ninepatch_button.png");
 
         auto tooltip = std::make_unique<sage::TooltipWindow>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             nullptr,
             nPatchTexture,
             sage::TextureStretchMode::NONE,
@@ -337,7 +337,7 @@ namespace lq
         // TODO: Have a special "loot window" which overrides Update and if the player moves out of loot range then
         // it closes itself.
         auto _window = std::make_unique<sage::Window>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             nPatchTexture,
             sage::TextureStretchMode::STRETCH,
             pos.x,
@@ -385,7 +385,7 @@ namespace lq
     {
         auto nPatchTexture = sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/frame.png");
         auto _window = std::make_unique<sage::Window>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             nPatchTexture,
             sage::TextureStretchMode::STRETCH,
             pos.x,
@@ -410,7 +410,7 @@ namespace lq
         }
 
         {
-            auto actor = engine->sys->cursor->GetSelectedActor();
+            auto actor = engine->sys->engine.cursor->GetSelectedActor();
             const InventorySlotBinder inventorySlotBinder(engine);
             // Inventory grid
             auto cell = mainTableRow2->CreateTableCell();
@@ -430,9 +430,9 @@ namespace lq
         window->Hide();
 
         window->onShow.Subscribe(
-            [engine]() { engine->sys->audioManager->PlaySFX("resources/audio/sfx/inv_open.ogg"); });
+            [engine]() { engine->sys->engine.audioManager->PlaySFX("resources/audio/sfx/inv_open.ogg"); });
         window->onHide.Subscribe(
-            [engine]() { engine->sys->audioManager->PlaySFX("resources/audio/sfx/inv_close.ogg"); });
+            [engine]() { engine->sys->engine.audioManager->PlaySFX("resources/audio/sfx/inv_close.ogg"); });
 
         return window;
     }
@@ -442,7 +442,7 @@ namespace lq
     {
         auto nPatchTexture = sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/frame.png");
         auto _window = std::make_unique<sage::Window>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             nPatchTexture,
             sage::TextureStretchMode::STRETCH,
             pos.x,
@@ -497,9 +497,9 @@ namespace lq
         window->FinalizeLayout();
         window->Hide();
         window->onShow.Subscribe(
-            [engine]() { engine->sys->audioManager->PlaySFX("resources/audio/sfx/book_open.ogg"); });
+            [engine]() { engine->sys->engine.audioManager->PlaySFX("resources/audio/sfx/book_open.ogg"); });
         window->onHide.Subscribe(
-            [engine]() { engine->sys->audioManager->PlaySFX("resources/audio/sfx/inv_close.ogg"); });
+            [engine]() { engine->sys->engine.audioManager->PlaySFX("resources/audio/sfx/inv_close.ogg"); });
 
         return window;
     }
@@ -509,7 +509,7 @@ namespace lq
     {
         auto nPatchTexture = sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/frame.png");
         auto _window = std::make_unique<sage::Window>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             nPatchTexture,
             sage::TextureStretchMode::STRETCH,
             pos.x,
@@ -634,9 +634,9 @@ namespace lq
         window->FinalizeLayout();
         window->Hide();
         window->onShow.Subscribe(
-            [engine]() { engine->sys->audioManager->PlaySFX("resources/audio/sfx/equip_open.ogg"); });
+            [engine]() { engine->sys->engine.audioManager->PlaySFX("resources/audio/sfx/equip_open.ogg"); });
         window->onHide.Subscribe(
-            [engine]() { engine->sys->audioManager->PlaySFX("resources/audio/sfx/inv_close.ogg"); });
+            [engine]() { engine->sys->engine.audioManager->PlaySFX("resources/audio/sfx/inv_close.ogg"); });
 
         return window;
     }
@@ -650,7 +650,7 @@ namespace lq
         float h = sage::Settings::TARGET_SCREEN_HEIGHT * 0.35;
 
         auto _windowDocked = std::make_unique<sage::WindowDocked>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             nPatchTexture,
             sage::TextureStretchMode::NONE,
             0,
@@ -702,7 +702,7 @@ namespace lq
             auto portraitCell = portraitRow->CreateTableCell();
 
             const auto& info =
-                engine->registry->get<PartyMemberComponent>(engine->sys->cursor->GetSelectedActor());
+                engine->registry->get<PartyMemberComponent>(engine->sys->engine.cursor->GetSelectedActor());
             auto tex = info.portraitImg.texture;
             auto img = std::make_unique<DialogPortrait>(engine, portraitCell, tex);
             portraitCell->CreateImagebox(std::move(img));
@@ -732,7 +732,7 @@ namespace lq
         auto w = sage::Settings::TARGET_SCREEN_WIDTH * 0.1;
         auto h = sage::Settings::TARGET_SCREEN_HEIGHT * 0.075;
         auto _windowDocked = std::make_unique<sage::WindowDocked>(
-            engine->sys->settings,
+            engine->sys->engine.settings,
             0,
             0,
             w,

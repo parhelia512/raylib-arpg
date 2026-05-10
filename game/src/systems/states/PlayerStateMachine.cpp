@@ -87,19 +87,20 @@ namespace lq
 
         void OnEnter(entt::entity self) override
         {
-            sys->actorMovementSystem->CancelMovement(self);
+            sys->engine.actorMovementSystem->CancelMovement(self);
             auto& moveable = registry->get<sage::MoveableActor>(self);
             auto& state = registry->get<PlayerState>(self);
 
-            auto party = static_cast<Systems*>(sys)->partySystem->GetAllMembers();
+            auto party = sys->partySystem->GetAllMembers();
 
             for (const auto& member : party)
             {
                 const auto& collideable = registry->get<sage::Collideable>(member);
-                sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, false);
+                sys->engine.navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, false);
             }
 
-            if (sys->actorMovementSystem->TryPathfindToLocation(self, sys->cursor->getFirstCollision().point))
+            if (sys->engine.actorMovementSystem->TryPathfindToLocation(
+                    self, sys->engine.cursor->getFirstCollision().point))
             {
                 auto& animation = registry->get<sage::Animation>(self);
                 animation.ChangeAnimationByEnum(sage::AnimationEnum::RUN);
@@ -121,7 +122,7 @@ namespace lq
             for (const auto& member : party)
             {
                 const auto& collideable = registry->get<sage::Collideable>(member);
-                sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true);
+                sys->engine.navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true);
             }
         }
 
@@ -170,7 +171,7 @@ namespace lq
             auto& playerDiag = registry->get<DialogComponent>(self);
             playerDiag.dialogTarget = moveable.actorTarget.value();
             const auto& pos = registry->get<DialogComponent>(playerDiag.dialogTarget).conversationPos;
-            sys->actorMovementSystem->PathfindToLocation(self, pos);
+            sys->engine.actorMovementSystem->PathfindToLocation(self, pos);
 
             auto& state = registry->get<PlayerState>(self);
             auto sub = moveable.onDestinationReached.Subscribe(
@@ -262,7 +263,7 @@ namespace lq
             Vector3 direction = Vector3Subtract(npcTrans.GetWorldPos(), actorTrans.GetWorldPos());
             direction = Vector3Normalize(direction);
             const float angle = atan2f(direction.x, direction.z);
-            sys->transformSystem->SetRotation(
+            sys->engine.transformSystem->SetRotation(
                 self, {actorTrans.GetWorldRot().x, RAD2DEG * angle, actorTrans.GetWorldRot().z});
 
             sys->dialogSystem->StartConversation(npcTrans, playerDiag.dialogTarget);
@@ -324,7 +325,7 @@ namespace lq
                 sage::Vector3MultiplyByValue(
                     Vector3Subtract(chestTrans.GetWorldPos(), trans.GetWorldPos()), 0.85));
             // TODO: N.B. Right now, its possible that 'dest' is outside of LOOT_RANGE
-            sys->actorMovementSystem->PathfindToLocation(self, dest);
+            sys->engine.actorMovementSystem->PathfindToLocation(self, dest);
 
             auto& state = registry->get<PlayerState>(self);
             auto sub = moveable.onDestinationReached.Subscribe(
@@ -401,7 +402,7 @@ namespace lq
 
             Vector3 targetPos = Vector3Subtract(enemyPos, direction);
 
-            sys->actorMovementSystem->PathfindToLocation(self, targetPos);
+            sys->engine.actorMovementSystem->PathfindToLocation(self, targetPos);
         }
 
         void OnExit(entt::entity self) override

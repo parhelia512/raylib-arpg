@@ -30,7 +30,7 @@ namespace lq
 
     bool InventorySystem::CheckWorldItemRange(bool hover)
     {
-        const auto cursorPos = sys->cursor->getMouseHitInfo().rlCollision.point;
+        const auto cursorPos = sys->engine.cursor->getMouseHitInfo().rlCollision.point;
         if (sage::AlmostEquals(cursorPos, lastWorldItemHovered.pos))
         {
             return lastWorldItemHovered.reachable;
@@ -39,7 +39,7 @@ namespace lq
         lastWorldItemHovered.pos = cursorPos;
         lastWorldItemHovered.reachable = false;
 
-        auto actorId = sys->cursor->GetSelectedActor();
+        auto actorId = sys->engine.cursor->GetSelectedActor();
         const auto playerPos = registry->get<sage::sgTransform>(actorId).GetWorldPos();
 
         const auto dist = Vector3Distance(cursorPos, playerPos);
@@ -53,8 +53,8 @@ namespace lq
         }
 
         const auto& collideable = registry->get<sage::Collideable>(actorId);
-        sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, false);
-        if (sys->navigationGridSystem->AStarPathfind(actorId, playerPos, cursorPos).empty())
+        sys->engine.navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, false);
+        if (sys->engine.navigationGridSystem->AStarPathfind(actorId, playerPos, cursorPos).empty())
         {
             if (!hover)
             {
@@ -65,7 +65,7 @@ namespace lq
         {
             lastWorldItemHovered.reachable = true;
         }
-        sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true);
+        sys->engine.navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true);
 
         return lastWorldItemHovered.reachable;
     }
@@ -74,7 +74,7 @@ namespace lq
     {
         if (!CheckWorldItemRange()) return;
 
-        auto& inventoryComponent = registry->get<InventoryComponent>(sys->cursor->GetSelectedActor());
+        auto& inventoryComponent = registry->get<InventoryComponent>(sys->engine.cursor->GetSelectedActor());
 
         if (inventoryComponent.AddItem(entity))
         {
@@ -122,7 +122,7 @@ namespace lq
 
     InventorySystem::InventorySystem(entt::registry* _registry, Systems* _sys) : registry(_registry), sys(_sys)
     {
-        _sys->cursor->onLeftClick.Subscribe([this](entt::entity itemId) {
+        _sys->engine.cursor->onLeftClick.Subscribe([this](entt::entity itemId) {
             const auto& col = registry->get<sage::Collideable>(itemId);
             if (col.collisionLayer != lq::collision_layers::Item) return;
             onWorldItemClicked(itemId);

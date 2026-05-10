@@ -30,10 +30,12 @@ namespace lq
     class LootSystem;
     class ControllableActorSystem;
 
-    class Systems : public sage::EngineSystems
+    class Systems
     {
 
       public:
+        sage::EngineSystems engine;
+
         std::unique_ptr<LeverUIEngine> uiEngine;
         std::unique_ptr<DialogSystem> dialogSystem;
         std::unique_ptr<DialogFactory> dialogFactory;
@@ -57,5 +59,15 @@ namespace lq
             sage::KeyMapping* _keyMapping,
             sage::Settings* _settings,
             sage::AudioManager* _audioManager);
+
+        [[nodiscard]] sage::EngineSystems* Engine()
+        {
+            return &engine;
+        }
+
+        [[nodiscard]] const sage::EngineSystems* Engine() const
+        {
+            return &engine;
+        }
     };
 } // namespace lq

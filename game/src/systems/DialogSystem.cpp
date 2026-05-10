@@ -27,10 +27,10 @@ namespace lq
         const auto& dialogComponent = registry->get<DialogComponent>(npc);
         if (dialogComponent.cameraPos.has_value())
         {
-            sys->camera->CutscenePose(cutscenePose, dialogComponent.cameraPos.value());
+            sys->engine.camera->CutscenePose(cutscenePose, dialogComponent.cameraPos.value());
         }
-        sys->camera->LockInput();
-        sys->cursor->DisableContextSwitching();
+        sys->engine.camera->LockInput();
+        sys->engine.cursor->DisableContextSwitching();
 
         dialogComponent.conversation->BindKeysToOptionSelect();
 
@@ -44,12 +44,12 @@ namespace lq
 
     void DialogSystem::endConversation(entt::entity npc) const
     {
-        sys->camera->UnlockInput();
-        sys->cursor->EnableContextSwitching();
+        sys->engine.camera->UnlockInput();
+        sys->engine.cursor->EnableContextSwitching();
         if (const auto& dialogComponent = registry->get<DialogComponent>(npc);
             dialogComponent.cameraPos.has_value())
         {
-            sys->camera->CutsceneEnd();
+            sys->engine.camera->CutsceneEnd();
         }
         dialogWindow->Remove();
     }

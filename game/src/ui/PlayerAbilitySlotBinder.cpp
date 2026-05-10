@@ -61,7 +61,7 @@ namespace lq
             dropped->RetrieveInfo();
         });
 
-        uiEngine->sys->cursor->onSelectedActorChange.Subscribe(
+        uiEngine->sys->engine.cursor->onSelectedActorChange.Subscribe(
             [slotPtr](entt::entity, entt::entity) { slotPtr->RetrieveInfo(); });
 
         slot.RetrieveInfo();

@@ -24,7 +24,7 @@ namespace lq
     {
         // Draw model (if needed)
         rlDisableBackfaceCulling();
-        auto& transform = sys->registry->get<sage::sgTransform>(ability->self);
+        auto& transform = sys->engine.registry->get<sage::sgTransform>(ability->self);
         model.Draw(transform.GetWorldPos(), Vector3{0, 1, 0}, 0, Vector3{1, 1, 1}, WHITE);
         rlEnableBackfaceCulling();
     }

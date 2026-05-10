@@ -99,7 +99,7 @@ namespace lq
 
         if (data.indicatorKey == AbilityIndicatorEnum::CIRCULAR_MAGIC_CURSOR)
         {
-            obj = std::make_unique<AbilityIndicator>(_sys->registry, _sys, "indicator_rainoffire");
+            obj = std::make_unique<AbilityIndicator>(_sys->engine.registry, _sys->Engine(), "indicator_rainoffire");
         }
         else
         {
@@ -110,30 +110,30 @@ namespace lq
 
     void AttachVisualFX(Systems* _sys, entt::entity abilityEntity)
     {
-        const auto& ad = _sys->registry->get<AbilityData>(abilityEntity);
+        const auto& ad = _sys->engine.registry->get<AbilityData>(abilityEntity);
         if (ad.vfx.name == AbilityVFXEnum::NONE) return;
 
-        auto* _ability = &_sys->registry->get<Ability>(abilityEntity);
+        auto* _ability = &_sys->engine.registry->get<Ability>(abilityEntity);
 
         if (ad.vfx.name == AbilityVFXEnum::RAINOFFIRE)
         {
-            _sys->registry->emplace<RainOfFireVFX>(abilityEntity, _sys, _ability);
+            _sys->engine.registry->emplace<RainOfFireVFX>(abilityEntity, _sys, _ability);
         }
         else if (ad.vfx.name == AbilityVFXEnum::FLOORFIRE)
         {
-            _sys->registry->emplace<FloorFireVFX>(abilityEntity, _sys, _ability);
+            _sys->engine.registry->emplace<FloorFireVFX>(abilityEntity, _sys, _ability);
         }
         else if (ad.vfx.name == AbilityVFXEnum::WHIRLWIND)
         {
-            _sys->registry->emplace<WhirlwindVFX>(abilityEntity, _sys, _ability);
+            _sys->engine.registry->emplace<WhirlwindVFX>(abilityEntity, _sys, _ability);
         }
         else if (ad.vfx.name == AbilityVFXEnum::LIGHTNINGBALL)
         {
-            _sys->registry->emplace<LightningBallVFX>(abilityEntity, _sys, _ability);
+            _sys->engine.registry->emplace<LightningBallVFX>(abilityEntity, _sys, _ability);
         }
         else if (ad.vfx.name == AbilityVFXEnum::FIREBALL)
         {
-            _sys->registry->emplace<FireballVFX>(abilityEntity, _sys, _ability);
+            _sys->engine.registry->emplace<FireballVFX>(abilityEntity, _sys, _ability);
         }
     }
 
@@ -142,19 +142,19 @@ namespace lq
         auto& ad = registry->get<AbilityData>(abilityEntity);
         auto& projectileTrans = registry->get<sage::sgTransform>(abilityEntity);
         auto& casterPos = registry->get<sage::sgTransform>(caster).GetWorldPos();
-        auto point = sys->cursor->getFirstNaviCollision().point;
+        auto point = sys->engine.cursor->getFirstNaviCollision().point;
 
         if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CASTER))
         {
-            sys->transformSystem->SetPosition(abilityEntity, casterPos);
+            sys->engine.transformSystem->SetPosition(abilityEntity, casterPos);
         }
         else if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CURSOR))
         {
-            auto cursorPos = sys->cursor->getFirstNaviCollision().point;
-            sys->transformSystem->SetPosition(abilityEntity, cursorPos);
+            auto cursorPos = sys->engine.cursor->getFirstNaviCollision().point;
+            sys->engine.transformSystem->SetPosition(abilityEntity, cursorPos);
         }
 
-        sys->actorMovementSystem->MoveToLocation(abilityEntity, point);
+        sys->engine.actorMovementSystem->MoveToLocation(abilityEntity, point);
     }
 
     // --------------------------------------------

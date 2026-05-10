@@ -38,7 +38,7 @@ namespace lq
             cosf(spiralAngle) * spiralRadius,
             spiralRadius / 2, // This makes the spiral move upwards as it expands
             sinf(spiralAngle) * spiralRadius};
-        //        auto& transform = sys->registry->get<sgTransform>(ability->self);
+        //        auto& transform = sys->engine.registry->get<sgTransform>(ability->self);
         //        fountain->SetOrigin(transform.GetWorldPos());
         fountain->SetOrigin({spiralPos});
         fountain->Update(dt);
@@ -53,6 +53,6 @@ namespace lq
     {
         shader =
             sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/billboard.fs");
-        fountain = std::make_unique<FountainPartSys>(_sys->camera->getRaylibCam());
+        fountain = std::make_unique<FountainPartSys>(_sys->engine.camera->getRaylibCam());
     }
 } // namespace lq

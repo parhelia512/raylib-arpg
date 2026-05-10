@@ -33,7 +33,7 @@ namespace lq
     void FloorFireVFX::InitSystem()
     {
         active = true;
-        auto& transform = sys->registry->get<sage::sgTransform>(ability->self);
+        auto& transform = sys->engine.registry->get<sage::sgTransform>(ability->self);
         texture->Init(transform.GetWorldPos());
         texture->Enable(true);
     }
@@ -46,10 +46,10 @@ namespace lq
 
         // Screen size likely not used
         screenSizeLoc = GetShaderLocation(shader, "screenSize");
-        screenSize = sys->settings->GetScreenSize();
+        screenSize = sys->engine.settings->GetScreenSize();
         SetShaderValue(shader, screenSizeLoc, &screenSize, SHADER_UNIFORM_VEC2);
 
         texture = std::make_unique<sage::TextureTerrainOverlay>(
-            _sys->registry, _sys, "indicator_rainoffire", WHITE, shader);
+            _sys->engine.registry, _sys->Engine(), "indicator_rainoffire", WHITE, shader);
     }
 } // namespace lq

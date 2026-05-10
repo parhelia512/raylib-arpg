@@ -17,7 +17,7 @@ namespace lq
     {
         auto* slotPtr = &slot;
 
-        engine->sys->cursor->onSelectedActorChange.Subscribe(
+        engine->sys->engine.cursor->onSelectedActorChange.Subscribe(
             [slotPtr](entt::entity, entt::entity current) { slotPtr->SetOwner(current); });
 
         engine->sys->inventorySystem->onInventoryUpdated.Subscribe([slotPtr]() { slotPtr->RetrieveInfo(); });
@@ -31,7 +31,7 @@ namespace lq
     {
         auto* slotPtr = &slot;
 
-        engine->sys->cursor->onSelectedActorChange.Subscribe(
+        engine->sys->engine.cursor->onSelectedActorChange.Subscribe(
             [slotPtr](entt::entity, entt::entity) { slotPtr->RetrieveInfo(); });
 
         engine->sys->equipmentSystem->onEquipmentUpdated.Subscribe(

@@ -20,7 +20,7 @@ namespace lq
     {
         // Draw model (if needed)
         rlDisableBackfaceCulling();
-        auto& transform = sys->registry->get<sage::sgTransform>(ability->self);
+        auto& transform = sys->engine.registry->get<sage::sgTransform>(ability->self);
         slashModel.Draw(
             transform.GetWorldPos(),
             Vector3{0, 1, 0},

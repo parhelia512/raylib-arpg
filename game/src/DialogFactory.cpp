@@ -270,7 +270,7 @@ namespace lq
                     auto owner = line.substr(std::string("owner:").size());
                     owner = trim(owner);
 
-                    entity = sys->renderSystem->FindRenderable<DialogComponent>(owner);
+                    entity = sys->engine.renderSystem->FindRenderable<DialogComponent>(owner);
                     assert(entity != entt::null);
                     // if (!registry->any_of<DialogComponent>(entity))
                     // {

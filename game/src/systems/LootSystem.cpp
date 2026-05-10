@@ -28,13 +28,13 @@ namespace lq
             auto& transform = registry->get<sage::sgTransform>(clickedChest);
             auto screenPos = GetWorldToScreenEx(
                 transform.GetWorldPos(),
-                *sys->camera->getRaylibCam(),
+                *sys->engine.camera->getRaylibCam(),
                 sage::Settings::TARGET_SCREEN_WIDTH,
                 sage::Settings::TARGET_SCREEN_HEIGHT);
             openLootWindow =
                 GameUiFactory::CreateLootWindow(registry, sys->uiEngine.get(), clickedChest, screenPos);
             openLootWindow->onHide.Subscribe([this] { openLootWindow = nullptr; });
-            sys->audioManager->PlaySFX("resources/audio/sfx/chest_open.ogg");
+            sys->engine.audioManager->PlaySFX("resources/audio/sfx/chest_open.ogg");
         };
 
         // if the clicked chest differs from the previous, open a new window
@@ -65,7 +65,7 @@ namespace lq
         if (chest == entt::null) return false;
         // If the player walks too far from the lootable object, then remove the loot window.
         const auto& transform = registry->get<sage::sgTransform>(chest).GetWorldPos();
-        const auto& playerPos = registry->get<sage::sgTransform>(sys->cursor->GetSelectedActor()).GetWorldPos();
+        const auto& playerPos = registry->get<sage::sgTransform>(sys->engine.cursor->GetSelectedActor()).GetWorldPos();
         return Vector3Distance(playerPos, transform) < LOOT_DISTANCE;
     }
 

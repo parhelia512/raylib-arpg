@@ -100,9 +100,9 @@ namespace lq
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
 
         registry->emplace<sage::sgTransform>(weaponEntity);
-        sys->transformSystem->SetParent(weaponEntity, owner);
-        sys->transformSystem->SetLocalPos(weaponEntity, Vector3Zero());
-        sys->transformSystem->SetLocalRot(weaponEntity, {0, 0, 0, 0});
+        sys->engine.transformSystem->SetParent(weaponEntity, owner);
+        sys->engine.transformSystem->SetLocalPos(weaponEntity, Vector3Zero());
+        sys->engine.transformSystem->SetLocalRot(weaponEntity, {0, 0, 0, 0});
         auto& animation = registry->get<sage::Animation>(owner);
         weapon.animationFollowSub = animation.onAnimationUpdated.Subscribe(
             [this](entt::entity _entity) { updateCharacterWeaponPosition(_entity); });
@@ -122,19 +122,19 @@ namespace lq
         // TODO: Should probably update the weapons again after taking the "photo"
 
         auto oldPos = transform.GetWorldPos();
-        auto cameraPos = sys->camera->GetPosition();
-        auto cameraTarget = sys->camera->getRaylibCam()->target;
-        sys->transformSystem->SetPosition(entity, {0, -999, 0});
+        auto cameraPos = sys->engine.camera->GetPosition();
+        auto cameraTarget = sys->engine.camera->getRaylibCam()->target;
+        sys->engine.transformSystem->SetPosition(entity, {0, -999, 0});
 
         auto current = animation.current;
         animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE2);
         updateCharacterPreviewPose(entity);
-        sys->camera->SetCamera({-1.5, -992.5, 1.5}, {0.5, -992.5, 0});
+        sys->engine.camera->SetCamera({-1.5, -992.5, 1.5}, {0.5, -992.5, 0});
 
         info.portraitImg = LoadRenderTexture(width, height);
         BeginTextureMode(info.portraitImg);
         ClearBackground(BLACK);
-        BeginMode3D(*sys->camera->getRaylibCam());
+        BeginMode3D(*sys->engine.camera->getRaylibCam());
         auto& uber = registry->get<sage::UberShaderComponent>(entity);
         uber.ClearFlagAll(sage::UberShaderComponent::Lit);
         uber.SetShaderBools();
@@ -145,9 +145,9 @@ namespace lq
         EndTextureMode();
 
         animation.current = current;
-        sys->transformSystem->SetPosition(entity, oldPos);
+        sys->engine.transformSystem->SetPosition(entity, oldPos);
 
-        sys->camera->SetCamera(cameraPos, cameraTarget);
+        sys->engine.camera->SetCamera(cameraPos, cameraTarget);
     }
 
     void EquipmentSystem::GenerateRenderTexture(entt::entity entity, float width, float height)
@@ -161,11 +161,11 @@ namespace lq
         // TODO: Should probably update the weapons again after taking the "photo"
 
         auto oldPos = transform.GetWorldPos();
-        auto cameraPos = sys->camera->GetPosition();
-        auto cameraTarget = sys->camera->getRaylibCam()->target;
+        auto cameraPos = sys->engine.camera->GetPosition();
+        auto cameraTarget = sys->engine.camera->getRaylibCam()->target;
 
-        sys->transformSystem->SetPosition(entity, {0, -999, 0});
-        sys->camera->SetCamera({6, -996, 12}, {0, -996, 0});
+        sys->engine.transformSystem->SetPosition(entity, {0, -999, 0});
+        sys->engine.camera->SetCamera({6, -996, 12}, {0, -996, 0});
 
         auto current = animation.current;
         animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
@@ -177,7 +177,7 @@ namespace lq
 
         BeginTextureMode(equipment.renderTexture);
         ClearBackground(BLANK);
-        BeginMode3D(*sys->camera->getRaylibCam());
+        BeginMode3D(*sys->engine.camera->getRaylibCam());
         auto& uber = registry->get<sage::UberShaderComponent>(entity);
         uber.ClearFlagAll(sage::UberShaderComponent::Lit);
         uber.SetShaderBools();
@@ -206,8 +206,8 @@ namespace lq
         EndTextureMode();
 
         animation.current = current;
-        sys->transformSystem->SetPosition(entity, oldPos);
-        sys->camera->SetCamera(cameraPos, cameraTarget);
+        sys->engine.transformSystem->SetPosition(entity, oldPos);
+        sys->engine.camera->SetCamera(cameraPos, cameraTarget);
     }
 
     entt::entity EquipmentSystem::GetItem(entt::entity owner, EquipmentSlotName itemType) const
@@ -251,7 +251,7 @@ namespace lq
             if (equipment.worldModels.contains(itemType) && equipment.worldModels[itemType] != entt::null)
             {
                 registry->get<sage::sgTransform>(equipment.worldModels[itemType]);
-                sys->transformSystem->SetParent(equipment.worldModels[itemType], entt::null);
+                sys->engine.transformSystem->SetParent(equipment.worldModels[itemType], entt::null);
                 registry->emplace<sage::DeleteEntityComponent>(equipment.worldModels[itemType]);
                 auto& weapon = registry->get<WeaponComponent>(equipment.worldModels[itemType]);
                 weapon.animationFollowSub.UnSubscribe();

@@ -72,7 +72,7 @@ namespace lq
 
     void PartySystem::GiveItemToSelected(const std::string& itemName) const
     {
-        auto& inventory = registry->get<InventoryComponent>(sys->cursor->GetSelectedActor());
+        auto& inventory = registry->get<InventoryComponent>(sys->engine.cursor->GetSelectedActor());
         auto itemId = sys->itemFactory->GetItem(itemName);
         auto success = inventory.AddItem(itemId);
     }
@@ -203,7 +203,7 @@ namespace lq
     {
         groups.resize(1);
 
-        sys->cursor->onSelectedActorChange.Subscribe(
+        sys->engine.cursor->onSelectedActorChange.Subscribe(
             [this](entt::entity, const entt::entity actor) { SetLeader(actor); });
     }
 } // namespace lq

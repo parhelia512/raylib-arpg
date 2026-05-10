@@ -17,7 +17,7 @@ namespace lq
         for (const auto& [k, v] : lootTable)
         {
             const auto entity =
-                sys->renderSystem->FindRenderable("_CHEST_" + k); // Not a huge fan of adding the tag
+                sys->engine.renderSystem->FindRenderable("_CHEST_" + k); // Not a huge fan of adding the tag
             assert(entity != entt::null);
             auto& inventory = registry->get<InventoryComponent>(entity);
             for (const auto& item : v)

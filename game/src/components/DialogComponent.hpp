@@ -136,22 +136,22 @@ namespace lq
                     if (i == 0)
                     {
                         optionPressedSubscriptions.push_back(
-                            sys->userInput->keyOnePressed.Subscribe([&o, this] { SelectOption(o.get()); }));
+                            sys->engine.userInput->keyOnePressed.Subscribe([&o, this] { SelectOption(o.get()); }));
                     }
                     else if (i == 1)
                     {
                         optionPressedSubscriptions.push_back(
-                            sys->userInput->keyTwoPressed.Subscribe([&o, this] { SelectOption(o.get()); }));
+                            sys->engine.userInput->keyTwoPressed.Subscribe([&o, this] { SelectOption(o.get()); }));
                     }
                     else if (i == 2)
                     {
                         optionPressedSubscriptions.push_back(
-                            sys->userInput->keyThreePressed.Subscribe([&o, this] { SelectOption(o.get()); }));
+                            sys->engine.userInput->keyThreePressed.Subscribe([&o, this] { SelectOption(o.get()); }));
                     }
                     else if (i == 3)
                     {
                         optionPressedSubscriptions.push_back(
-                            sys->userInput->keyFourPressed.Subscribe([&o, this] { SelectOption(o.get()); }));
+                            sys->engine.userInput->keyFourPressed.Subscribe([&o, this] { SelectOption(o.get()); }));
                     }
                     else
                     {

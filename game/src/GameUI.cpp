@@ -860,10 +860,10 @@ namespace lq
         if (col.collisionLayer != lq::collision_layers::Item) return;
         if (!sys->inventorySystem->CheckWorldItemRange(true) || tooltipWindow) return;
         auto& item = registry->get<ItemComponent>(entity);
-        auto viewport = sys->settings->GetViewPort();
+        auto viewport = sys->engine.settings->GetViewPort();
         Vector2 pos = GetWorldToScreenEx(
-            cursor->getMouseHitInfo().rlCollision.point, *sys->camera->getRaylibCam(), viewport.x, viewport.y);
-        pos.x += sys->settings->ScaleValueWidth(20); // TODO: magic number
+            cursor->getMouseHitInfo().rlCollision.point, *sys->engine.camera->getRaylibCam(), viewport.x, viewport.y);
+        pos.x += sys->engine.settings->ScaleValueWidth(20); // TODO: magic number
         GameUiFactory::CreateWorldTooltip(this, item.localizedName, pos);
     }
 
@@ -873,10 +873,10 @@ namespace lq
         if (col.collisionLayer != lq::collision_layers::Npc) return;
         if (tooltipWindow) return;
         auto& renderable = registry->get<sage::Renderable>(entity);
-        auto viewport = sys->settings->GetViewPort();
+        auto viewport = sys->engine.settings->GetViewPort();
         Vector2 pos = GetWorldToScreenEx(
-            cursor->getMouseHitInfo().rlCollision.point, *sys->camera->getRaylibCam(), viewport.x, viewport.y);
-        pos.x += sys->settings->ScaleValueWidth(20); // TODO: magic number
+            cursor->getMouseHitInfo().rlCollision.point, *sys->engine.camera->getRaylibCam(), viewport.x, viewport.y);
+        pos.x += sys->engine.settings->ScaleValueWidth(20); // TODO: magic number
         GameUiFactory::CreateWorldTooltip(this, renderable.GetVanityName(), pos);
     }
 
@@ -889,11 +889,11 @@ namespace lq
     }
 
     LeverUIEngine::LeverUIEngine(entt::registry* _registry, Systems* _sys)
-        : GameUIEngine(_registry, _sys), sys(_sys)
+        : GameUIEngine(_registry, _sys->Engine()), sys(_sys)
     {
-        _sys->cursor->onHover.Subscribe([this](const entt::entity entity) { onWorldItemHover(entity); });
-        _sys->cursor->onHover.Subscribe([this](const entt::entity entity) { onNPCHover(entity); });
-        _sys->cursor->onStopHover.Subscribe([this]() { onStopWorldHover(); });
+        _sys->engine.cursor->onHover.Subscribe([this](const entt::entity entity) { onWorldItemHover(entity); });
+        _sys->engine.cursor->onHover.Subscribe([this](const entt::entity entity) { onNPCHover(entity); });
+        _sys->engine.cursor->onStopHover.Subscribe([this]() { onStopWorldHover(); });
     }
 
 } // namespace lq

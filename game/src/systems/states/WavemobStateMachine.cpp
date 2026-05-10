@@ -104,7 +104,7 @@ namespace lq
             ray.direction.y = trans.GetWorldPos().y + height;
             trans.movementDirectionDebugLine = ray;
 
-            auto collisions = sys->collisionSystem->GetCollisionsWithRay(self, ray, collideable.collidesWith);
+            auto collisions = sys->engine.collisionSystem->GetCollisionsWithRay(self, ray, collideable.collidesWith);
 
             if (!collisions.empty() && collisions.at(0).collisionLayer != lq::collision_layers::Player)
             {
@@ -121,7 +121,7 @@ namespace lq
             const auto& targetPos = registry->get<sage::sgTransform>(target).GetWorldPos();
             auto& animation = registry->get<sage::Animation>(self);
             animation.ChangeAnimationByEnum(sage::AnimationEnum::WALK, 2);
-            sys->actorMovementSystem->PathfindToLocation(self, targetPos);
+            sys->engine.actorMovementSystem->PathfindToLocation(self, targetPos);
         }
 
       public:
@@ -251,7 +251,7 @@ namespace lq
             combatable.target = entt::null;
             combatable.dying = true;
             auto& bb = registry->get<sage::Collideable>(self).worldBoundingBox;
-            sys->navigationGridSystem->MarkSquareAreaOccupied(bb, false);
+            sys->engine.navigationGridSystem->MarkSquareAreaOccupied(bb, false);
             auto& animation = registry->get<sage::Animation>(self);
             animation.ChangeAnimationByEnum(sage::AnimationEnum::DEATH, true);
             auto& state = registry->get<WavemobState>(self);
@@ -262,7 +262,7 @@ namespace lq
             auto abilityEntity = sys->abilityFactory->GetAbility(self, AbilityEnum::ENEMY_AUTOATTACK);
             registry->get<Ability>(abilityEntity).cancelCast.Publish(abilityEntity);
 
-            sys->actorMovementSystem->CancelMovement(self);
+            sys->engine.actorMovementSystem->CancelMovement(self);
         }
 
         void OnExit(entt::entity self) override

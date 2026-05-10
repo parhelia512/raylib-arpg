@@ -99,7 +99,7 @@ namespace lq
                                 {
                                     sub = taskLine.substr(start);
                                 }
-                                entity = sys->renderSystem->FindRenderable(sub);
+                                entity = sys->engine.renderSystem->FindRenderable(sub);
                                 assert(entity != entt::null);
                                 assert(registry->any_of<DialogComponent>(entity));
                             }
@@ -114,7 +114,7 @@ namespace lq
                                 {
                                     sub = taskLine.substr(start);
                                 }
-                                entity = sys->renderSystem->FindRenderable(sub);
+                                entity = sys->engine.renderSystem->FindRenderable(sub);
                                 assert(entity != entt::null);
                                 assert(registry->any_of<ItemComponent>(entity));
                             }

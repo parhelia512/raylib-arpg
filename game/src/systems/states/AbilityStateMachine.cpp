@@ -58,17 +58,17 @@ namespace lq
         void enableCursor(entt::entity abilityEntity)
         {
             auto& ab = registry->get<Ability>(abilityEntity);
-            ab.abilityIndicator->Init(sys->cursor->getFirstNaviCollision().point);
+            ab.abilityIndicator->Init(sys->engine.cursor->getFirstNaviCollision().point);
             ab.abilityIndicator->Enable(true);
-            sys->cursor->Disable();
-            sys->cursor->Hide();
+            sys->engine.cursor->Disable();
+            sys->engine.cursor->Hide();
         }
 
         void disableCursor(entt::entity abilityEntity)
         {
             auto& ab = registry->get<Ability>(abilityEntity);
-            sys->cursor->Enable();
-            sys->cursor->Show();
+            sys->engine.cursor->Enable();
+            sys->engine.cursor->Show();
             ab.abilityIndicator->Enable(false);
         }
 
@@ -91,7 +91,7 @@ namespace lq
         void Update(entt::entity abilityEntity) override
         {
             auto& ab = registry->get<Ability>(abilityEntity);
-            ab.abilityIndicator->Update(sys->cursor->getFirstNaviCollision().point);
+            ab.abilityIndicator->Update(sys->engine.cursor->getFirstNaviCollision().point);
             if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
             {
                 onConfirm.Publish(abilityEntity);
@@ -192,7 +192,7 @@ namespace lq
         if (ad.base.HasBehaviour(AbilityBehaviour::ATTACK_TARGET))
         {
             auto target = registry->get<CombatableActor>(ab.caster).target;
-            HitSingleTarget(registry, sys, ab.caster, abilityEntity, target);
+            HitSingleTarget(registry, sys->Engine(), ab.caster, abilityEntity, target);
         }
         else if (ad.base.HasBehaviour(AbilityBehaviour::ATTACK_AOE_POINT))
         {
@@ -220,7 +220,7 @@ namespace lq
         if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CURSOR))
         {
             auto& casterPos = registry->get<sage::sgTransform>(ab.caster).GetWorldPos();
-            if (const auto point = sys->cursor->getFirstNaviCollision().point;
+            if (const auto point = sys->engine.cursor->getFirstNaviCollision().point;
                 Vector3Distance(point, casterPos) > ad.base.range)
             {
                 std::cout << "Out of range. \n";
@@ -256,23 +256,23 @@ namespace lq
                     // Then we can just say "if ability doesn't follow caster, then set its position"
                     if (trans.GetParent() != ab.caster)
                     {
-                        sys->transformSystem->SetParent(abilityEntity, ab.caster);
-                        sys->transformSystem->SetLocalPos(abilityEntity, {0, heightOffset, 0});
-                        sys->transformSystem->SetLocalRot(abilityEntity, Vector3Zero());
+                        sys->engine.transformSystem->SetParent(abilityEntity, ab.caster);
+                        sys->engine.transformSystem->SetLocalPos(abilityEntity, {0, heightOffset, 0});
+                        sys->engine.transformSystem->SetLocalRot(abilityEntity, Vector3Zero());
                     }
                 }
                 else
                 {
                     Vector3 pos{casterTrans.GetWorldPos().x, heightOffset, casterTrans.GetWorldPos().z};
-                    sys->transformSystem->SetPosition(abilityEntity, pos);
-                    sys->transformSystem->SetRotation(abilityEntity, casterTrans.GetWorldRot());
+                    sys->engine.transformSystem->SetPosition(abilityEntity, pos);
+                    sys->engine.transformSystem->SetRotation(abilityEntity, casterTrans.GetWorldRot());
                 }
 
                 vfx->InitSystem();
             }
             else if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CURSOR))
             {
-                sys->transformSystem->SetPosition(abilityEntity, sys->cursor->getFirstNaviCollision().point);
+                sys->engine.transformSystem->SetPosition(abilityEntity, sys->engine.cursor->getFirstNaviCollision().point);
                 vfx->InitSystem();
             }
         }

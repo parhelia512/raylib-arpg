@@ -69,7 +69,7 @@ namespace lq
                             if (metaLine.find("owner: ") != std::string::npos)
                             {
                                 auto sub = metaLine.substr(std::string("owner: ").size());
-                                entity = sys->renderSystem->FindRenderable(sub);
+                                entity = sys->engine.renderSystem->FindRenderable(sub);
                                 trigger = &registry->emplace<ContextualDialogTriggerComponent>(entity);
                                 assert(entity != entt::null && trigger);
                             }
@@ -84,7 +84,7 @@ namespace lq
                             {
                                 assert(entity != entt::null && trigger);
                                 auto sub = metaLine.substr(std::string("speaker: ").size());
-                                entt::entity speaker = sys->renderSystem->FindRenderable(sub);
+                                entt::entity speaker = sys->engine.renderSystem->FindRenderable(sub);
                                 assert(trigger->speaker != entt::null);
                                 trigger->speaker = speaker;
                             }
@@ -168,7 +168,7 @@ namespace lq
         {
             auto& trigger = registry->get<ContextualDialogTriggerComponent>(entity);
             const auto speaker = trigger.speaker;
-            const auto playerPos = registry->get<sage::sgTransform>(sys->cursor->GetSelectedActor()).GetWorldPos();
+            const auto playerPos = registry->get<sage::sgTransform>(sys->engine.cursor->GetSelectedActor()).GetWorldPos();
 
             const auto& col = view.get<sage::Collideable>(entity);
             auto center =
@@ -205,14 +205,14 @@ namespace lq
              const auto& entity : view)
         {
             const auto& col = view.get<sage::Collideable>(entity);
-            auto [width, height] = sys->settings->GetViewPort();
+            auto [width, height] = sys->engine.settings->GetViewPort();
             auto center =
                 sage::Vector3MultiplyByValue(Vector3Add(col.worldBoundingBox.max, col.worldBoundingBox.min), 0.5f);
             const auto pos = Vector3{center.x, col.worldBoundingBox.max.y + 1.0f, center.z};
-            auto screenPos = GetWorldToScreenEx(pos, *sys->camera->getRaylibCam(), width, height);
+            auto screenPos = GetWorldToScreenEx(pos, *sys->engine.camera->getRaylibCam(), width, height);
             auto& contextualDiag = registry->get<sage::OverheadDialogComponent>(entity);
 
-            auto scaledFontSize = sys->settings->ScaleValueMaintainRatio(fontSize);
+            auto scaledFontSize = sys->engine.settings->ScaleValueMaintainRatio(fontSize);
             const auto text = contextualDiag.GetText();
             DrawText(
                 text.c_str(),

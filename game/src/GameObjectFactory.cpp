@@ -62,11 +62,11 @@ namespace lq
     void placeActor(entt::registry* registry, entt::entity entity, Systems* sys, Vector3 position)
     {
         sage::GridSquare actorIdx{};
-        sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
-        auto gs = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col);
+        sys->engine.navigationGridSystem->WorldToGridSpace(position, actorIdx);
+        auto gs = sys->engine.navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col);
         assert(gs);
         float height = gs->heightMap.GetHeight();
-        sys->transformSystem->SetPosition(entity, {position.x, height, position.z});
+        sys->engine.transformSystem->SetPosition(entity, {position.x, height, position.z});
     }
 
     entt::entity GameObjectFactory::createDialogCutscene(
@@ -74,7 +74,7 @@ namespace lq
     {
         entt::entity id = registry->create();
         registry->emplace<sage::sgTransform>(id);
-        sys->transformSystem->SetPosition(id, position);
+        sys->engine.transformSystem->SetPosition(id, position);
 
         auto& renderable = registry->emplace<sage::Renderable>(id);
         renderable.SetName(name);
@@ -121,7 +121,7 @@ namespace lq
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.SetCollisionLayer(
             lq::collision_layers::Enemy, lq::collision_masks::ForLayer(lq::collision_layers::Enemy));
-        sys->transformSystem->SetRotation(
+        sys->engine.transformSystem->SetRotation(
             id, rotation); // TODO: Find out why this must be called after bounding box from collideable is created
 
         registry->emplace<WavemobState>(id);
@@ -158,8 +158,8 @@ namespace lq
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.SetCollisionLayer(
             lq::collision_layers::Npc, lq::collision_masks::ForLayer(lq::collision_layers::Npc));
-        sys->transformSystem->SetRotation(id, rotation);
-        sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
+        sys->engine.transformSystem->SetRotation(id, rotation);
+        sys->engine.navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
 
         registry->emplace<DialogComponent>(id);
 
@@ -206,8 +206,8 @@ namespace lq
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.SetCollisionLayer(
             lq::collision_layers::Npc, lq::collision_masks::ForLayer(lq::collision_layers::Npc));
-        sys->transformSystem->SetRotation(id, rotation);
-        sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
+        sys->engine.transformSystem->SetRotation(id, rotation);
+        sys->engine.navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
 
         registry->emplace<DialogComponent>(id);
 
@@ -242,7 +242,7 @@ namespace lq
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
         collideable.SetCollisionLayer(
             lq::collision_layers::Player, lq::collision_masks::ForLayer(lq::collision_layers::Player));
-        sys->transformSystem->SetRotation(id, rotation);
+        sys->engine.transformSystem->SetRotation(id, rotation);
 
         // Set animation hooks
         auto& animation = registry->emplace<sage::Animation>(id, "mdl_player_default");
@@ -263,7 +263,7 @@ namespace lq
         registry->emplace<PartyMemberComponent>(id, id);
         sys->partySystem->AddMember(id);
         registry->emplace<ControllableActor>(id);
-        sys->cursor->SetSelectedActor(id);
+        sys->engine.cursor->SetSelectedActor(id);
         registry->emplace<DialogComponent>(id);
 
         // Combat
@@ -289,12 +289,12 @@ namespace lq
 
             registry->emplace<sage::sgTransform>(id);
             sage::GridSquare actorIdx{};
-            sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
+            sys->engine.navigationGridSystem->WorldToGridSpace(position, actorIdx);
             float height =
-                sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
-            sys->transformSystem->SetPosition(id, {position.x, 12, position.z});
-            sys->transformSystem->SetScale(id, 1.0f);
-            sys->transformSystem->SetRotation(id, {0, 0, 0});
+                sys->engine.navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
+            sys->engine.transformSystem->SetPosition(id, {position.x, 12, position.z});
+            sys->engine.transformSystem->SetScale(id, 1.0f);
+            sys->engine.transformSystem->SetRotation(id, {0, 0, 0});
 
             auto& timer = registry->emplace<Timer>(id);
             timer.SetMaxTime(1000000);
@@ -322,8 +322,8 @@ namespace lq
             ownedModel->SetShader(shader, 0);
 
             renderable.reqShaderUpdate = [sys, secondsLoc](entt::entity entity) -> void {
-                auto& r = sys->registry->get<sage::Renderable>(entity);
-                auto& t = sys->registry->get<Timer>(entity);
+                auto& r = sys->engine.registry->get<sage::Renderable>(entity);
+                auto& t = sys->engine.registry->get<Timer>(entity);
                 auto time = t.GetCurrentTime();
                 SetShaderValue(r.GetModel()->GetShader(0), secondsLoc, &time, SHADER_UNIFORM_FLOAT);
             };
@@ -342,18 +342,18 @@ namespace lq
 
         registry->emplace<sage::sgTransform>(id);
         sage::GridSquare actorIdx{};
-        sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
-        float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
-        sys->transformSystem->SetPosition(id, {position.x, height, position.z});
-        sys->transformSystem->SetScale(id, 10.0f);
-        sys->transformSystem->SetRotation(id, {0, 0, 0});
+        sys->engine.navigationGridSystem->WorldToGridSpace(position, actorIdx);
+        float height = sys->engine.navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
+        sys->engine.transformSystem->SetPosition(id, {position.x, height, position.z});
+        sys->engine.transformSystem->SetScale(id, 10.0f);
+        sys->engine.transformSystem->SetRotation(id, {0, 0, 0});
 
         Matrix modelTransform = MatrixIdentity();
 
         auto& renderable = registry->emplace<sage::Renderable>(
             id, sage::ResourceManager::GetInstance().GetModelCopy("MDL_BUILDING_PORTAL"), modelTransform);
         renderable.SetName("Portal Outer");
-        sys->lightSubSystem->LinkRenderableToLight(id);
+        sys->engine.lightSubSystem->LinkRenderableToLight(id);
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable =
@@ -370,17 +370,17 @@ namespace lq
 
         auto& transform = registry->emplace<sage::sgTransform>(id);
         sage::GridSquare actorIdx{};
-        sys->navigationGridSystem->WorldToGridSpace(position, actorIdx);
-        float height = sys->navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
-        sys->transformSystem->SetPosition(id, {position.x, height, position.z});
-        sys->transformSystem->SetScale(id, 1.0f);
-        sys->transformSystem->SetRotation(id, {0, 0, 0});
+        sys->engine.navigationGridSystem->WorldToGridSpace(position, actorIdx);
+        float height = sys->engine.navigationGridSystem->GetGridSquare(actorIdx.row, actorIdx.col)->heightMap.GetHeight();
+        sys->engine.transformSystem->SetPosition(id, {position.x, height, position.z});
+        sys->engine.transformSystem->SetScale(id, 1.0f);
+        sys->engine.transformSystem->SetRotation(id, {0, 0, 0});
 
         Matrix modelTransform = MatrixIdentity();
         auto& renderable = registry->emplace<sage::Renderable>(
             id, sage::ResourceManager::GetInstance().GetModelCopy("MDL_BUILDING_WIZARDTOWER1"), modelTransform);
         renderable.SetName("Wizard Tower");
-        sys->lightSubSystem->LinkRenderableToLight(id);
+        sys->engine.lightSubSystem->LinkRenderableToLight(id);
 
         BoundingBox bb = renderable.GetModel()->CalcLocalBoundingBox();
         auto& collideable =
@@ -400,7 +400,7 @@ namespace lq
         // TODO: Need a way to store the matrix scale? Maybe in the resource packer we should store the transform
         registry->emplace<sage::Renderable>(itemId, std::move(model), MatrixScale(0.035, 0.035, 0.035));
         const auto& transform = registry->emplace<sage::sgTransform>(itemId);
-        sys->transformSystem->SetPosition(itemId, position);
+        sys->engine.transformSystem->SetPosition(itemId, position);
 
         // TODO: Uber shader? Lit?
 

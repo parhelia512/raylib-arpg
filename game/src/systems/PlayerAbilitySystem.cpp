@@ -15,7 +15,7 @@ namespace lq
 
     void PlayerAbilitySystem::PressAbility(unsigned int slotNumber) const
     {
-        const auto& selectedActor = sys->cursor->GetSelectedActor();
+        const auto& selectedActor = sys->engine.cursor->GetSelectedActor();
         const auto& abilitySlots = registry->get<CombatableActor>(selectedActor).abilities;
         std::cout << "Ability " << slotNumber << " pressed \n";
         if (abilitySlots[slotNumber] == entt::null)
@@ -36,7 +36,7 @@ namespace lq
     Ability* PlayerAbilitySystem::GetAbility(unsigned int slotNumber) const
     {
         assert(slotNumber < MAX_ABILITY_NUMBER);
-        const auto& selectedActor = sys->cursor->GetSelectedActor();
+        const auto& selectedActor = sys->engine.cursor->GetSelectedActor();
         const auto& abilitySlots = registry->get<CombatableActor>(selectedActor).abilities;
         if (abilitySlots.at(slotNumber) == entt::null) return nullptr;
         return &registry->get<Ability>(abilitySlots.at(slotNumber));
@@ -44,7 +44,7 @@ namespace lq
 
     void PlayerAbilitySystem::SwapAbility(unsigned int slot1, unsigned int slot2)
     {
-        const auto& selectedActor = sys->cursor->GetSelectedActor();
+        const auto& selectedActor = sys->engine.cursor->GetSelectedActor();
         const auto& abilitySlots = registry->get<CombatableActor>(selectedActor).abilities;
         auto ability1 = abilitySlots.at(slot1);
         auto ability2 = abilitySlots.at(slot2);
@@ -55,7 +55,7 @@ namespace lq
     void PlayerAbilitySystem::SetSlot(unsigned int slot, entt::entity abilityEntity) const
     {
         assert(slot < MAX_ABILITY_NUMBER);
-        const auto& selectedActor = sys->cursor->GetSelectedActor();
+        const auto& selectedActor = sys->engine.cursor->GetSelectedActor();
         auto& abilitySlots = registry->get<CombatableActor>(selectedActor).abilities;
         abilitySlots[slot] = abilityEntity;
     }
@@ -64,13 +64,13 @@ namespace lq
     {
         if (!abilityPressedSubscriptions.empty()) return;
         abilityPressedSubscriptions.push_back(
-            sys->userInput->keyOnePressed.Subscribe([this]() { PressAbility(0); }));
+            sys->engine.userInput->keyOnePressed.Subscribe([this]() { PressAbility(0); }));
         abilityPressedSubscriptions.push_back(
-            sys->userInput->keyTwoPressed.Subscribe([this]() { PressAbility(1); }));
+            sys->engine.userInput->keyTwoPressed.Subscribe([this]() { PressAbility(1); }));
         abilityPressedSubscriptions.push_back(
-            sys->userInput->keyThreePressed.Subscribe([this]() { PressAbility(2); }));
+            sys->engine.userInput->keyThreePressed.Subscribe([this]() { PressAbility(2); }));
         abilityPressedSubscriptions.push_back(
-            sys->userInput->keyFourPressed.Subscribe([this]() { PressAbility(3); }));
+            sys->engine.userInput->keyFourPressed.Subscribe([this]() { PressAbility(3); }));
     }
 
     void PlayerAbilitySystem::UnsubscribeFromUserInput()

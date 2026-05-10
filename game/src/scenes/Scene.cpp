@@ -55,7 +55,7 @@ namespace lq
             }
         }
         registry->erase<sage::Spawner>(spawnerView.begin(), spawnerView.end());
-        sys->cursor->SetSelectedActor(firstPlayer);
+        sys->engine.cursor->SetSelectedActor(firstPlayer);
     }
 
     void Scene::initAssets() const
@@ -67,8 +67,8 @@ namespace lq
         const auto heightMap = sage::ResourceManager::GetInstance().GetImage("HEIGHT_MAP");
         const auto normalMap = sage::ResourceManager::GetInstance().GetImage("NORMAL_MAP");
         const auto slices = heightMap.GetWidth();
-        sys->navigationGridSystem->Init(slices, 1.0f);
-        sys->navigationGridSystem->PopulateGrid(heightMap, normalMap);
+        sys->engine.navigationGridSystem->Init(slices, 1.0f);
+        sys->engine.navigationGridSystem->PopulateGrid(heightMap, normalMap);
 
         // NB: Dependent on *only* the map/static meshes having been loaded at this point
         for (const auto view = registry->view<sage::Renderable>(); auto entity : view)
@@ -85,7 +85,7 @@ namespace lq
         sys->questManager->InitQuestsFromDirectory();
 
         sys->dialogFactory->InitDialogFromDirectory(); // Must be called after all npcs are loaded
-        sys->camera->FocusSelectedActor();
+        sys->engine.camera->FocusSelectedActor();
     }
 
     void Scene::initUI() const
@@ -99,11 +99,11 @@ namespace lq
             GameUiFactory::CreateCharacterWindow(registry, sys->uiEngine.get(), {700, 50}, w, h);
         auto* journalWindow = GameUiFactory::CreateJournalWindow(registry, sys->uiEngine.get(), {900, 150}, w, h);
 
-        sys->userInput->keyIPressed.Subscribe([inventoryWindow]() { inventoryWindow->ToggleHide(); });
-        sys->userInput->keyCPressed.Subscribe([equipmentWindow]() { equipmentWindow->ToggleHide(); });
-        sys->userInput->keyJPressed.Subscribe([journalWindow]() { journalWindow->ToggleHide(); });
+        sys->engine.userInput->keyIPressed.Subscribe([inventoryWindow]() { inventoryWindow->ToggleHide(); });
+        sys->engine.userInput->keyCPressed.Subscribe([equipmentWindow]() { equipmentWindow->ToggleHide(); });
+        sys->engine.userInput->keyJPressed.Subscribe([journalWindow]() { journalWindow->ToggleHide(); });
 
-        sys->userInput->keyFPressed.Subscribe([this]() { sys->camera->FocusSelectedActor(); });
+        sys->engine.userInput->keyFPressed.Subscribe([this]() { sys->engine.camera->FocusSelectedActor(); });
 
         GameUiFactory::CreatePartyPortraitsColumn(sys->uiEngine.get());
         GameUiFactory::CreateGameWindowButtons(
@@ -112,41 +112,41 @@ namespace lq
 
     void Scene::Update()
     {
-        sys->audioManager->Update();
-        sys->renderSystem->Update();
-        sys->camera->Update();
-        sys->userInput->ListenForInput();
-        sys->cursor->Update();
-        sys->lightSubSystem->Update();
+        sys->engine.audioManager->Update();
+        sys->engine.renderSystem->Update();
+        sys->engine.camera->Update();
+        sys->engine.userInput->ListenForInput();
+        sys->engine.cursor->Update();
+        sys->engine.lightSubSystem->Update();
         sys->uiEngine->Update();
         spiral->Update(GetFrameTime());
-        sys->cursorClickIndicator->Update();
-        sys->fullscreenTextOverlayFactory->Update();
-        sys->actorMovementSystem->Update();
-        sys->collisionSystem->Update();
+        sys->engine.cursorClickIndicator->Update();
+        sys->engine.fullscreenTextOverlayFactory->Update();
+        sys->engine.actorMovementSystem->Update();
+        sys->engine.collisionSystem->Update();
         sys->controllableActorSystem->Update();
         sys->healthBarSystem->Update();
-        sys->animationSystem->Update();
+        sys->engine.animationSystem->Update();
         sys->contextualDialogSystem->Update();
-        sys->spatialAudioSystem->Update();
+        sys->engine.spatialAudioSystem->Update();
         sys->lootSystem->Update();
         sys->stateMachines->Update();
     }
 
     void Scene::DrawDebug3D()
     {
-        sys->cursor->DrawDebug();
-        sys->camera->DrawDebug();
-        sys->lightSubSystem->DrawDebugLights();
-        sys->navigationGridSystem->DrawDebug();
-        sys->actorMovementSystem->DrawDebug();
-        sys->collisionSystem->DrawDebug();
+        sys->engine.cursor->DrawDebug();
+        sys->engine.camera->DrawDebug();
+        sys->engine.lightSubSystem->DrawDebugLights();
+        sys->engine.navigationGridSystem->DrawDebug();
+        sys->engine.actorMovementSystem->DrawDebug();
+        sys->engine.collisionSystem->DrawDebug();
     }
 
     void Scene::Draw3D()
     {
-        sys->renderSystem->Draw();
-        sys->cursor->Draw3D();
+        sys->engine.renderSystem->Draw();
+        sys->engine.cursor->Draw3D();
         sys->healthBarSystem->Draw3D();
         sys->stateMachines->Draw3D();
         // spiral->Draw3D();
@@ -161,8 +161,8 @@ namespace lq
     {
         sys->contextualDialogSystem->Draw2D();
         sys->uiEngine->Draw2D();
-        sys->cursor->Draw2D();
-        sys->fullscreenTextOverlayFactory->Draw2D();
+        sys->engine.cursor->Draw2D();
+        sys->engine.fullscreenTextOverlayFactory->Draw2D();
     }
 
     Scene::~Scene()

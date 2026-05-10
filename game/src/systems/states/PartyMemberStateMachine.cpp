@@ -37,7 +37,7 @@ namespace lq
       public:
         void onLeaderMove(entt::entity self) const
         {
-            sys->actorMovementSystem->CancelMovement(self);
+            sys->engine.actorMovementSystem->CancelMovement(self);
             stateController->ChangeState(self, PartyMemberStateEnum::FollowingLeader);
         }
 
@@ -95,7 +95,7 @@ namespace lq
             auto dest = targetMoveable.IsMoving() ? targetMoveable.GetDestination() : targetTrans.GetWorldPos();
             const auto dir = Vector3Normalize(Vector3Subtract(dest, trans.GetWorldPos()));
             dest = Vector3Subtract(dest, sage::Vector3MultiplyByValue(dir, FOLLOW_DISTANCE));
-            sys->actorMovementSystem->PathfindToLocation(self, dest, true);
+            sys->engine.actorMovementSystem->PathfindToLocation(self, dest, true);
         }
 
         void onTargetReached(const entt::entity self) const
@@ -165,7 +165,7 @@ namespace lq
             // TODO: We don't disconnect the subscriptions here?
             auto& moveable = registry->get<sage::MoveableActor>(self);
             moveable.actorTarget.reset();
-            sys->actorMovementSystem->CancelMovement(self);
+            sys->engine.actorMovementSystem->CancelMovement(self);
         }
 
         ~FollowingLeaderState() override = default;
@@ -190,7 +190,7 @@ namespace lq
       public:
         void Update(const entt::entity self) override
         {
-            if (self == sys->cursor->GetSelectedActor())
+            if (self == sys->engine.cursor->GetSelectedActor())
             {
                 stateController->ChangeState(self, PartyMemberStateEnum::Default);
             }
@@ -215,7 +215,7 @@ namespace lq
             assert(moveable.actorTarget.has_value());
             auto sub =
                 moveable.onMovementCancel.Subscribe([this](entt::entity entity) { onMovementCancelled(entity); });
-            auto sub1 = sys->cursor->onSelectedActorChange.Subscribe(
+            auto sub1 = sys->engine.cursor->onSelectedActorChange.Subscribe(
                 [this](entt::entity, entt::entity entity) { onMovementCancelled(entity); });
 
             auto& state = registry->get<PartyMemberState>(self);
@@ -258,7 +258,7 @@ namespace lq
             {
                 // Give up trying.
                 moveable.actorTarget.reset();
-                sys->actorMovementSystem->CancelMovement(self);
+                sys->engine.actorMovementSystem->CancelMovement(self);
                 stateController->ChangeState(self, PartyMemberStateEnum::Default);
                 return;
             }
@@ -267,7 +267,7 @@ namespace lq
             {
                 ++data.tryCount;
                 data.timeStart = GetTime();
-                if (sys->actorMovementSystem->TryPathfindToLocation(self, data.originalDestination, true))
+                if (sys->engine.actorMovementSystem->TryPathfindToLocation(self, data.originalDestination, true))
                 {
                     stateController->ChangeState(self, PartyMemberStateEnum::FollowingLeader);
                 }
@@ -279,7 +279,7 @@ namespace lq
                     const auto& target = registry->get<sage::MoveableActor>(self).actorTarget;
                     assert(target.has_value());
                     auto leaderPos = registry->get<sage::sgTransform>(target.value()).GetWorldPos();
-                    if (sys->actorMovementSystem->TryPathfindToLocation(self, leaderPos, true))
+                    if (sys->engine.actorMovementSystem->TryPathfindToLocation(self, leaderPos, true))
                     {
                         data.tryCount = 0;
                     }
@@ -333,9 +333,9 @@ namespace lq
     void PartyMemberStateMachine::onComponentAdded(entt::entity self)
     {
         auto& state{registry->get<PartyMemberState>(self)};
-        const auto& leaderMoveable{registry->get<sage::MoveableActor>(sys->cursor->GetSelectedActor())};
+        const auto& leaderMoveable{registry->get<sage::MoveableActor>(sys->engine.cursor->GetSelectedActor())};
         auto& moveable = registry->get<sage::MoveableActor>(self);
-        moveable.actorTarget.emplace(sys->cursor->GetSelectedActor());
+        moveable.actorTarget.emplace(sys->engine.cursor->GetSelectedActor());
         auto& target = registry->get<sage::MoveableActor>(moveable.actorTarget.value());
         target.onStartMovement.Subscribe([this, self](const entt::entity) {
             static_cast<DefaultState*>(GetStateFromEnum(PartyMemberStateEnum::Default))->onLeaderMove(self);

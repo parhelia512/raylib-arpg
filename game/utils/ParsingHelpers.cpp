@@ -117,7 +117,7 @@ namespace lq::parsing
             };
 
             auto quest_task_complete = [&](const std::string& params) -> bool {
-                const auto entity = sys->renderSystem->FindRenderable(params);
+                const auto entity = sys->engine.renderSystem->FindRenderable(params);
                 assert(entity != entt::null);
                 const auto& questComponent = registry->get<QuestTaskComponent>(entity);
                 return questComponent.IsComplete();

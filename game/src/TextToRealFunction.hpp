@@ -38,14 +38,14 @@ namespace lq::parsing
         if (func.name.find("OpenDoor") != std::string::npos)
         {
             assert(!func.params.empty());
-            auto doorId = sys->renderSystem->FindRenderable<sage::DoorBehaviorComponent>(func.params);
+            auto doorId = sys->engine.renderSystem->FindRenderable<sage::DoorBehaviorComponent>(func.params);
             assert(doorId != entt::null);
-            event->Subscribe([doorId, sys](Args...) { sys->doorSystem->UnlockAndOpenDoor(doorId); });
+            event->Subscribe([doorId, sys](Args...) { sys->engine.doorSystem->UnlockAndOpenDoor(doorId); });
         }
         else if (func.name.find("JoinParty") != std::string::npos)
         {
             assert(!func.params.empty());
-            auto npcId = sys->renderSystem->FindRenderable(func.params);
+            auto npcId = sys->engine.renderSystem->FindRenderable(func.params);
             assert(npcId != entt::null);
             event->Subscribe([npcId, sys](Args...) { sys->partySystem->NPCToMember(npcId); });
         }
@@ -64,17 +64,17 @@ namespace lq::parsing
         else if (func.name.find("PlaySFX") != std::string::npos)
         {
             assert(!func.params.empty());
-            event->Subscribe([sfxName = func.params, sys](Args...) { sys->audioManager->PlaySFX(sfxName); });
+            event->Subscribe([sfxName = func.params, sys](Args...) { sys->engine.audioManager->PlaySFX(sfxName); });
         }
         else if (func.name.find("PlayMusic") != std::string::npos)
         {
             assert(!func.params.empty());
-            event->Subscribe([musicName = func.params, sys](Args...) { sys->audioManager->PlayMusic(musicName); });
+            event->Subscribe([musicName = func.params, sys](Args...) { sys->engine.audioManager->PlayMusic(musicName); });
         }
         else if (func.name.find("DisableWorldItem") != std::string::npos)
         {
             assert(!func.params.empty());
-            auto itemId = sys->renderSystem->FindRenderable(func.params);
+            auto itemId = sys->engine.renderSystem->FindRenderable(func.params);
             assert(itemId != entt::null);
             event->Subscribe([itemId, registry](Args...) {
                 if (registry->any_of<sage::Renderable>(itemId))
@@ -95,8 +95,8 @@ namespace lq::parsing
                 text.emplace_back("What will await our valiant heroes?", 4.0f);
                 text.emplace_back("Find out soon.", 4.0f);
                 text.emplace_back("Thanks for playing!", 4.0f);
-                sys->fullscreenTextOverlayFactory->SetOverlay(text, 0.5f, 1.0f);
-                sys->fullscreenTextOverlayFactory->onOverlayEnd.Subscribe([sys] { sys->settings->ExitProgram(); });
+                sys->engine.fullscreenTextOverlayFactory->SetOverlay(text, 0.5f, 1.0f);
+                sys->engine.fullscreenTextOverlayFactory->onOverlayEnd.Subscribe([sys] { sys->engine.settings->ExitProgram(); });
             });
         }
         else

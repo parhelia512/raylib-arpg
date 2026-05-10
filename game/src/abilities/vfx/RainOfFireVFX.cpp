@@ -59,7 +59,7 @@ namespace lq
     {
         int maxRadius = 5; // TODO: temporary. Should be the radius of the ability's cursor
 
-        auto right = sys->camera->GetRight();
+        auto right = sys->engine.camera->GetRight();
         auto aerialSpawn = sage::Vector3MultiplyByValue(right, 3);
 
         // Calculate a random point in the circle around the target
@@ -87,7 +87,7 @@ namespace lq
 
         if (!fireball.flameEffect)
         {
-            fireball.flameEffect = std::make_unique<FlamePartSys>(sys->camera->getRaylibCam());
+            fireball.flameEffect = std::make_unique<FlamePartSys>(sys->engine.camera->getRaylibCam());
             fireball.flameEffect->SetOrigin(fireball.position);
             fireball.flameEffect->SetDirection(direction);
         }
@@ -101,7 +101,7 @@ namespace lq
         initialHeight = height;
         minHeight = 0.0f;
         impactRadius = 1.0f;
-        auto& transform = sys->registry->get<sage::sgTransform>(ability->self);
+        auto& transform = sys->engine.registry->get<sage::sgTransform>(ability->self);
         target = transform.GetWorldPos();
         // Base spawn point slightly behind and above the target
         baseSpawnPoint = {target.x + initialOffset, target.y + height, target.z + initialOffset};

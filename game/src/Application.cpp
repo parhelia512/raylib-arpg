@@ -98,7 +98,7 @@ namespace lq
 #endif
             settings->toggleFullScreenRequested = false;
             const auto viewport = settings->GetViewPort();
-            scene->sys->userInput->onWindowUpdate.Publish(prev, viewport);
+            scene->sys->engine.userInput->onWindowUpdate.Publish(prev, viewport);
             UnloadTexture(renderTexture.texture);
             UnloadTexture(renderTexture2d.texture);
             renderTexture = LoadRenderTexture(static_cast<int>(viewport.x), static_cast<int>(viewport.y));
@@ -144,7 +144,7 @@ namespace lq
 
         BeginTextureMode(renderTexture);
         ClearBackground(BLANK);
-        BeginMode3D(*scene->sys->camera->getRaylibCam());
+        BeginMode3D(*scene->sys->engine.camera->getRaylibCam());
         scene->Draw3D();
         // scene->DrawDebug3D();
         EndMode3D();

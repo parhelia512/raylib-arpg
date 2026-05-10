@@ -25,20 +25,20 @@ namespace lq
     void ExampleScene::Init()
     {
 
-        const auto soundScape = sys->audioManager->PlayMusic("resources/audio/bgs/Cave.ogg");
+        const auto soundScape = sys->engine.audioManager->PlayMusic("resources/audio/bgs/Cave.ogg");
         SetMusicVolume(soundScape, 0.75);
 
         std::vector<std::pair<std::string, float>> text;
         text.emplace_back("Steve Wheeler presents...", 0.2f);
         text.emplace_back("LeverQuest", 0.2f);
-        sys->fullscreenTextOverlayFactory->SetOverlay(text, 0.5f, 1.0f);
+        sys->engine.fullscreenTextOverlayFactory->SetOverlay(text, 0.5f, 1.0f);
 
-        const auto actor = sys->cursor->GetSelectedActor();
+        const auto actor = sys->engine.cursor->GetSelectedActor();
         assert(actor != entt::null);
-        const auto conversationEntity = sys->renderSystem->FindRenderableByName("Opening_Dialog");
+        const auto conversationEntity = sys->engine.renderSystem->FindRenderableByName("Opening_Dialog");
         assert(conversationEntity != entt::null);
 
-        sys->fullscreenTextOverlayFactory->onOverlayEnding.Subscribe([actor, this]() {
+        sys->engine.fullscreenTextOverlayFactory->onOverlayEnding.Subscribe([actor, this]() {
             sys->stateMachines->playerStateMachine->ChangeState(actor, PlayerStateEnum::InDialog);
             auto& animationComponent = registry->get<sage::Animation>(actor);
             animationComponent.ChangeAnimationByEnum(sage::AnimationEnum::IDLE2);
@@ -48,8 +48,8 @@ namespace lq
 
         auto& conversationComponent = registry->get<DialogComponent>(conversationEntity);
         conversationComponent.conversation->onConversationEnd.Subscribe([this]() {
-            sys->camera->FocusSelectedActor();
-            // sys->audioManager->PlayMusic("resources/audio/music/bgm.ogg");
+            sys->engine.camera->FocusSelectedActor();
+            // sys->engine.audioManager->PlayMusic("resources/audio/music/bgm.ogg");
         });
     }
 
