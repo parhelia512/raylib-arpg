@@ -13,6 +13,8 @@
 #include "components/PartyMemberComponent.hpp"
 #include "components/QuestComponents.hpp"
 #include "GameUI.hpp"
+#include "ui/ItemSlotBinders.hpp"
+#include "ui/PlayerAbilitySlotBinder.hpp"
 #include "QuestManager.hpp"
 #include "Systems.hpp"
 #include "systems/ControllableActorSystem.hpp"
@@ -163,10 +165,16 @@ namespace lq
         auto table = abilityCell->CreateTable();
         table->CreateTableRow(24); // Experience bar
         auto abilityRow = table->CreateTableRowGrid(MAX_ABILITY_NUMBER, 4, {4, 4, 0, 0});
+        auto* playerAbilitySystem = engine->sys->playerAbilitySystem.get();
+        auto emptySlotTex =
+            sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/empty-inv_slot.png");
+        const PlayerAbilitySlotBinder abilitySlotBinder(engine, playerAbilitySystem, emptySlotTex);
+
         for (unsigned int i = 0; i < abilityRow->children.size(); ++i)
         {
             auto cell = dynamic_cast<sage::TableCell*>(abilityRow->children[i].get());
-            CreateAbilitySlot(cell, std::make_unique<AbilitySlot>(engine, cell, i));
+            auto* slot = CreateAbilitySlot(cell, std::make_unique<AbilitySlot>(engine, cell, i));
+            abilitySlotBinder.Bind(*slot, i);
         }
 
         // TODO: Currently, if one imagebox has SHRINK_ROW_TO_FIT all imageboxes in that row would be scaled.
@@ -403,6 +411,7 @@ namespace lq
 
         {
             auto actor = engine->sys->cursor->GetSelectedActor();
+            const InventorySlotBinder inventorySlotBinder(engine);
             // Inventory grid
             auto cell = mainTableRow2->CreateTableCell();
             auto table = cell->CreateTableGrid(INVENTORY_MAX_ROWS, INVENTORY_MAX_COLS, 4);
@@ -412,12 +421,8 @@ namespace lq
                 {
                     auto invCell = dynamic_cast<sage::TableCell*>(table->children[row]->children[col].get());
                     auto invSlot = std::make_unique<InventorySlot>(engine, invCell, actor, row, col);
-                    auto ptr = CreateInventorySlot(invCell, std::move(invSlot));
-
-                    engine->sys->cursor->onSelectedActorChange.Subscribe(
-                        [ptr](entt::entity prev, entt::entity current) { ptr->SetOwner(current); });
-
-                    engine->sys->inventorySystem->onInventoryUpdated.Subscribe([ptr]() { ptr->RetrieveInfo(); });
+                    auto* slot = CreateInventorySlot(invCell, std::move(invSlot));
+                    inventorySlotBinder.Bind(*slot);
                 }
             }
         }
@@ -533,13 +538,14 @@ namespace lq
         int maxRows = 6;
         int maxCols = 1;
 
+        const EquipmentSlotBinder equipmentSlotBinder(engine);
         auto createEquipSlot =
-            [&engine](const sage::Table* table, unsigned int row, unsigned int col, EquipmentSlotName itemType) {
+            [&engine, &equipmentSlotBinder](
+                const sage::Table* table, unsigned int row, unsigned int col, EquipmentSlotName itemType) {
                 auto cell = dynamic_cast<sage::TableCell*>(table->children[row]->children[col].get());
                 auto equipSlot = std::make_unique<EquipmentSlot>(engine, cell, itemType);
-                auto* ptr = CreateEquipmentSlot(cell, std::move(equipSlot));
-                engine->sys->equipmentSystem->onEquipmentUpdated.Subscribe(
-                    [ptr](entt::entity) { ptr->RetrieveInfo(); });
+                auto* slot = CreateEquipmentSlot(cell, std::move(equipSlot));
+                equipmentSlotBinder.Bind(*slot);
             };
 
         auto createSpacerSlot = [&engine](const sage::Table* table, unsigned int row, unsigned int col) {

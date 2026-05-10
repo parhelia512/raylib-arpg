@@ -13,7 +13,7 @@
 
 namespace lq
 {
-    struct Systems;
+    class Systems;
     class Quest;
 
     class QuestManager

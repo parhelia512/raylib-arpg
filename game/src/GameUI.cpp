@@ -768,7 +768,6 @@ namespace lq
         LeverUIEngine* _engine, sage::TableCell* _parent, const EquipmentSlotName _itemType)
         : ItemSlot(_engine, _parent, sage::VertAlignment::MIDDLE, sage::HoriAlignment::CENTER), itemType(_itemType)
     {
-        engine->cursor->onSelectedActorChange.Subscribe([this](entt::entity, entt::entity) { RetrieveInfo(); });
     }
 
     entt::entity InventorySlot::GetOwner() const
