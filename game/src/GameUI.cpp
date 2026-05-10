@@ -18,6 +18,7 @@
 #include "components/ItemComponent.hpp"
 #include "components/PartyMemberComponent.hpp"
 #include "components/QuestComponents.hpp"
+#include "collision/RpgCollisionLayers.hpp"
 #include "GameObjectFactory.hpp"
 #include "GameUiFactory.hpp"
 #include "QuestManager.hpp"
@@ -856,7 +857,7 @@ namespace lq
     void LeverUIEngine::onWorldItemHover(entt::entity entity)
     {
         const auto& col = registry->get<sage::Collideable>(entity);
-        if (col.collisionLayer != sage::CollisionLayer::ITEM) return;
+        if (col.collisionLayer != lq::collision_layers::Item) return;
         if (!sys->inventorySystem->CheckWorldItemRange(true) || tooltipWindow) return;
         auto& item = registry->get<ItemComponent>(entity);
         auto viewport = sys->settings->GetViewPort();
@@ -869,7 +870,7 @@ namespace lq
     void LeverUIEngine::onNPCHover(entt::entity entity)
     {
         const auto& col = registry->get<sage::Collideable>(entity);
-        if (col.collisionLayer != sage::CollisionLayer::NPC) return;
+        if (col.collisionLayer != lq::collision_layers::Npc) return;
         if (tooltipWindow) return;
         auto& renderable = registry->get<sage::Renderable>(entity);
         auto viewport = sys->settings->GetViewPort();

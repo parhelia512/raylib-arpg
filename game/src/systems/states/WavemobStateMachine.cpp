@@ -3,6 +3,7 @@
 #include "Systems.hpp"
 
 #include "AbilityFactory.hpp"
+#include "collision/RpgCollisionLayers.hpp"
 #include "components/Ability.hpp"
 #include "components/CombatableActor.hpp"
 
@@ -103,9 +104,9 @@ namespace lq
             ray.direction.y = trans.GetWorldPos().y + height;
             trans.movementDirectionDebugLine = ray;
 
-            auto collisions = sys->collisionSystem->GetCollisionsWithRay(self, ray, collideable.collisionLayer);
+            auto collisions = sys->collisionSystem->GetCollisionsWithRay(self, ray, collideable.collidesWith);
 
-            if (!collisions.empty() && collisions.at(0).collisionLayer != sage::CollisionLayer::PLAYER)
+            if (!collisions.empty() && collisions.at(0).collisionLayer != lq::collision_layers::Player)
             {
                 // Lost line of sight, out of combat
                 combatable.target = entt::null;

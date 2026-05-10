@@ -4,6 +4,7 @@
 
 #include "Systems.hpp"
 
+#include "collision/RpgCollisionLayers.hpp"
 #include "GameUI.hpp"
 
 #include "engine/Camera.hpp"
@@ -37,5 +38,13 @@ namespace lq
           lootSystem(std::make_unique<LootSystem>(_registry, this))
     {
         EngineSystems::uiEngine = this->uiEngine.get();
+        collisionSystem->SetDefaultQueryMask(collision_masks::DefaultQuery);
+        cursor->SetCursorHoverMask(collision_masks::CursorHover);
+        cursor->SetCursorTexture(collision_layers::Npc, "cursor_talk");
+        cursor->SetCursorTexture(collision_layers::Enemy, "cursor_attack");
+        cursor->SetCursorTexture(collision_layers::Item, "cursor_pickup");
+        cursor->SetCursorTexture(collision_layers::Chest, "cursor_pickup");
+        cursor->SetCursorTexture(collision_layers::Interactable, "cursor_interact");
+        cursor->SetCursorTexture(collision_layers::Building, "cursor_denied");
     }
 } // namespace lq

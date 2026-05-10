@@ -10,6 +10,7 @@
 #include "components/InventoryComponent.hpp"
 #include "components/PartyMemberComponent.hpp"
 #include "components/States.hpp"
+#include "collision/RpgCollisionLayers.hpp"
 #include "ControllableActorSystem.hpp"
 #include "InventorySystem.hpp"
 #include "ItemFactory.hpp"
@@ -124,7 +125,8 @@ namespace lq
         auto& combatable = registry->emplace<CombatableActor>(npc);
         combatable.actorType = CombatableActorType::PLAYER;
         auto& col = registry->get<sage::Collideable>(npc);
-        col.collisionLayer = sage::CollisionLayer::PLAYER;
+        col.SetCollisionLayer(
+            lq::collision_layers::Player, lq::collision_masks::ForLayer(lq::collision_layers::Player));
         registry->emplace<PartyMemberComponent>(npc, npc);
         registry->emplace<PartyMemberState>(npc);
 

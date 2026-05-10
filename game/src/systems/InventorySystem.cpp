@@ -7,6 +7,7 @@
 #include "components/InventoryComponent.hpp"
 #include "components/ItemComponent.hpp"
 #include "components/QuestComponents.hpp"
+#include "collision/RpgCollisionLayers.hpp"
 #include "ControllableActorSystem.hpp"
 #include "engine/Camera.hpp"
 #include "engine/components/Collideable.hpp"
@@ -123,7 +124,7 @@ namespace lq
     {
         _sys->cursor->onLeftClick.Subscribe([this](entt::entity itemId) {
             const auto& col = registry->get<sage::Collideable>(itemId);
-            if (col.collisionLayer != sage::CollisionLayer::ITEM) return;
+            if (col.collisionLayer != lq::collision_layers::Item) return;
             onWorldItemClicked(itemId);
         });
 

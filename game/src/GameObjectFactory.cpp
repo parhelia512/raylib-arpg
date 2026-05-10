@@ -13,6 +13,7 @@
 #include "components/ItemComponent.hpp"
 #include "components/PartyMemberComponent.hpp"
 #include "components/States.hpp"
+#include "collision/RpgCollisionLayers.hpp"
 #include "ItemFactory.hpp"
 #include "Systems.hpp"
 #include "systems/PartySystem.hpp"
@@ -118,7 +119,8 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f);
         auto& collideable =
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
-        collideable.collisionLayer = sage::CollisionLayer::ENEMY;
+        collideable.SetCollisionLayer(
+            lq::collision_layers::Enemy, lq::collision_masks::ForLayer(lq::collision_layers::Enemy));
         sys->transformSystem->SetRotation(
             id, rotation); // TODO: Find out why this must be called after bounding box from collideable is created
 
@@ -154,7 +156,8 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable =
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
-        collideable.collisionLayer = sage::CollisionLayer::NPC;
+        collideable.SetCollisionLayer(
+            lq::collision_layers::Npc, lq::collision_masks::ForLayer(lq::collision_layers::Npc));
         sys->transformSystem->SetRotation(id, rotation);
         sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
 
@@ -201,7 +204,8 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable =
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
-        collideable.collisionLayer = sage::CollisionLayer::NPC;
+        collideable.SetCollisionLayer(
+            lq::collision_layers::Npc, lq::collision_masks::ForLayer(lq::collision_layers::Npc));
         sys->transformSystem->SetRotation(id, rotation);
         sys->navigationGridSystem->MarkSquareAreaOccupied(collideable.worldBoundingBox, true, id);
 
@@ -236,7 +240,8 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 6.5f); // Manually set bounding box dimensions
         auto& collideable =
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
-        collideable.collisionLayer = sage::CollisionLayer::PLAYER;
+        collideable.SetCollisionLayer(
+            lq::collision_layers::Player, lq::collision_masks::ForLayer(lq::collision_layers::Player));
         sys->transformSystem->SetRotation(id, rotation);
 
         // Set animation hooks
@@ -326,7 +331,10 @@ namespace lq
             BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
             auto& collideable = registry->emplace<sage::Collideable>(
                 id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
-            collideable.collisionLayer = sage::CollisionLayer::BUILDING;
+            collideable.SetCollisionLayer(
+                lq::collision_layers::Building,
+                lq::collision_masks::ForLayer(lq::collision_layers::Building));
+            collideable.blocksNavigation = true;
             registry->emplace<sage::StaticCollideable>(id);
         }
 
@@ -350,7 +358,9 @@ namespace lq
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable =
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
-        collideable.collisionLayer = sage::CollisionLayer::BUILDING;
+        collideable.SetCollisionLayer(
+            lq::collision_layers::Building, lq::collision_masks::ForLayer(lq::collision_layers::Building));
+        collideable.blocksNavigation = true;
         registry->emplace<sage::StaticCollideable>(id);
     }
 
@@ -375,7 +385,9 @@ namespace lq
         BoundingBox bb = renderable.GetModel()->CalcLocalBoundingBox();
         auto& collideable =
             registry->emplace<sage::Collideable>(id, bb, registry->get<sage::sgTransform>(id).GetMatrixNoRot());
-        collideable.collisionLayer = sage::CollisionLayer::BUILDING;
+        collideable.SetCollisionLayer(
+            lq::collision_layers::Building, lq::collision_masks::ForLayer(lq::collision_layers::Building));
+        collideable.blocksNavigation = true;
         registry->emplace<sage::StaticCollideable>(id);
     }
 
@@ -394,7 +406,8 @@ namespace lq
 
         auto& collideable = registry->emplace<sage::Collideable>(
             itemId, createRectangularBoundingBox(2.0, 2.0), transform.GetMatrixNoRot());
-        collideable.collisionLayer = sage::CollisionLayer::ITEM;
+        collideable.SetCollisionLayer(
+            lq::collision_layers::Item, lq::collision_masks::ForLayer(lq::collision_layers::Item));
         registry->emplace<sage::StaticCollideable>(itemId);
         return true;
     }

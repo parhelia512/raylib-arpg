@@ -6,6 +6,7 @@
 
 #include "components/ControllableActor.hpp"
 #include "components/States.hpp"
+#include "collision/RpgCollisionLayers.hpp"
 #include "PartySystem.hpp"
 #include "Systems.hpp"
 
@@ -65,28 +66,28 @@ namespace lq
         current.cursorOnEnemyLeftClickSub =
             sys->cursor->onLeftClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
                 const auto& col = registry->get<sage::Collideable>(clickedEntity);
-                if (col.collisionLayer != sage::CollisionLayer::ENEMY) return;
+                if (col.collisionLayer != lq::collision_layers::Enemy) return;
                 const auto& c = registry->get<ControllableActor>(newActorEntity);
                 c.onEnemyLeftClick.Publish(newActorEntity, clickedEntity);
             });
         current.cursorOnEnemyRightClickSub =
             sys->cursor->onLeftClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
                 const auto& col = registry->get<sage::Collideable>(clickedEntity);
-                if (col.collisionLayer != sage::CollisionLayer::ENEMY) return;
+                if (col.collisionLayer != lq::collision_layers::Enemy) return;
                 const auto& c = registry->get<ControllableActor>(newActorEntity);
                 c.onEnemyRightClick.Publish(newActorEntity, clickedEntity);
             });
         current.cursorOnNPCLeftClickSub =
             sys->cursor->onLeftClick.Subscribe([this, newActorEntity](const entt::entity clickedEntity) {
                 const auto& col = registry->get<sage::Collideable>(clickedEntity);
-                if (col.collisionLayer != sage::CollisionLayer::NPC) return;
+                if (col.collisionLayer != lq::collision_layers::Npc) return;
                 const auto& c = registry->get<ControllableActor>(newActorEntity);
                 c.onNPCLeftClick.Publish(newActorEntity, clickedEntity);
             });
         current.cursorOnChestClickSub =
             sys->cursor->onLeftClick.Subscribe([this, newActorEntity](entt::entity clickedEntity) {
                 const auto& col = registry->get<sage::Collideable>(clickedEntity);
-                if (col.collisionLayer != sage::CollisionLayer::CHEST) return;
+                if (col.collisionLayer != lq::collision_layers::Chest) return;
                 const auto& c = registry->get<ControllableActor>(newActorEntity);
                 c.onChestClick.Publish(newActorEntity, clickedEntity);
             });
