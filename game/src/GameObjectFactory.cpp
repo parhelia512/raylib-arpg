@@ -3,6 +3,7 @@
 //
 
 #include "GameObjectFactory.hpp"
+#include "animation/RpgAnimationIds.hpp"
 
 #include "AbilityFactory.hpp"
 #include "components/CombatableActor.hpp"
@@ -105,11 +106,11 @@ namespace lq
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Skinned);
 
         auto& animation = registry->emplace<sage::Animation>(id, "mdl_goblin");
-        animation.animationMap[sage::AnimationEnum::IDLE] = 1;
-        animation.animationMap[sage::AnimationEnum::DEATH] = 0;
-        animation.animationMap[sage::AnimationEnum::WALK] = 4;
-        animation.animationMap[sage::AnimationEnum::AUTOATTACK] = 2;
-        animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+        animation.animationMap[lq::animation_ids::Idle] = 1;
+        animation.animationMap[lq::animation_ids::Death] = 0;
+        animation.animationMap[lq::animation_ids::Walk] = 4;
+        animation.animationMap[lq::animation_ids::AutoAttack] = 2;
+        animation.ChangeAnimationById(lq::animation_ids::Idle);
 
         auto& combatable = registry->emplace<CombatableActor>(id);
         combatable.actorType = CombatableActorType::WAVEMOB;
@@ -146,12 +147,12 @@ namespace lq
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Skinned);
 
         auto& animation = registry->emplace<sage::Animation>(id, "mdl_goblin");
-        animation.animationMap[sage::AnimationEnum::IDLE] = 1;
-        animation.animationMap[sage::AnimationEnum::DEATH] = 0;
-        animation.animationMap[sage::AnimationEnum::WALK] = 4;
-        animation.animationMap[sage::AnimationEnum::AUTOATTACK] = 2;
-        animation.animationMap[sage::AnimationEnum::TALK] = 1;
-        animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+        animation.animationMap[lq::animation_ids::Idle] = 1;
+        animation.animationMap[lq::animation_ids::Death] = 0;
+        animation.animationMap[lq::animation_ids::Walk] = 4;
+        animation.animationMap[lq::animation_ids::AutoAttack] = 2;
+        animation.animationMap[lq::animation_ids::Talk] = 1;
+        animation.ChangeAnimationById(lq::animation_ids::Idle);
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable =
@@ -188,18 +189,18 @@ namespace lq
         // Set animation hooks
         auto& animation = registry->emplace<sage::Animation>(id, "mdl_player_default");
         // TODO: I think we're going to need to move these elsewhere to make this function more generic
-        animation.animationMap[sage::AnimationEnum::WALK] = 1;
-        animation.animationMap[sage::AnimationEnum::TALK] = 2;
-        animation.animationMap[sage::AnimationEnum::AUTOATTACK] = 6;
-        animation.animationMap[sage::AnimationEnum::RUN] = 4;
-        animation.animationMap[sage::AnimationEnum::IDLE2] = 0;
-        animation.animationMap[sage::AnimationEnum::IDLE] = 10; // 11 is T-Pose, 10 is ninja idle
-        animation.animationMap[sage::AnimationEnum::SPIN] = 5;
-        animation.animationMap[sage::AnimationEnum::SLASH] = 6;
-        animation.animationMap[sage::AnimationEnum::SPELLCAST_UP] = 7;
-        animation.animationMap[sage::AnimationEnum::SPELLCAST_FWD] = 8;
-        animation.animationMap[sage::AnimationEnum::ROLL] = 9;
-        animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+        animation.animationMap[lq::animation_ids::Walk] = 1;
+        animation.animationMap[lq::animation_ids::Talk] = 2;
+        animation.animationMap[lq::animation_ids::AutoAttack] = 6;
+        animation.animationMap[lq::animation_ids::Run] = 4;
+        animation.animationMap[lq::animation_ids::Idle2] = 0;
+        animation.animationMap[lq::animation_ids::Idle] = 10; // 11 is T-Pose, 10 is ninja idle
+        animation.animationMap[lq::animation_ids::Spin] = 5;
+        animation.animationMap[lq::animation_ids::Slash] = 6;
+        animation.animationMap[lq::animation_ids::SpellcastUp] = 7;
+        animation.animationMap[lq::animation_ids::SpellcastForward] = 8;
+        animation.animationMap[lq::animation_ids::Roll] = 9;
+        animation.ChangeAnimationById(lq::animation_ids::Idle);
 
         BoundingBox bb = createRectangularBoundingBox(3.0f, 7.0f); // Manually set bounding box dimensions
         auto& collideable =
@@ -247,18 +248,18 @@ namespace lq
         // Set animation hooks
         auto& animation = registry->emplace<sage::Animation>(id, "mdl_player_default");
         // TODO: I think we're going to need to move these elsewhere to make this function more generic
-        animation.animationMap[sage::AnimationEnum::WALK] = 1;
-        animation.animationMap[sage::AnimationEnum::TALK] = 2;
-        animation.animationMap[sage::AnimationEnum::AUTOATTACK] = 6;
-        animation.animationMap[sage::AnimationEnum::RUN] = 4;
-        animation.animationMap[sage::AnimationEnum::IDLE2] = 0;
-        animation.animationMap[sage::AnimationEnum::IDLE] = 10; // 11 is T-Pose, 10 is ninja idle
-        animation.animationMap[sage::AnimationEnum::SPIN] = 5;
-        animation.animationMap[sage::AnimationEnum::SLASH] = 6;
-        animation.animationMap[sage::AnimationEnum::SPELLCAST_UP] = 7;
-        animation.animationMap[sage::AnimationEnum::SPELLCAST_FWD] = 8;
-        animation.animationMap[sage::AnimationEnum::ROLL] = 9;
-        animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+        animation.animationMap[lq::animation_ids::Walk] = 1;
+        animation.animationMap[lq::animation_ids::Talk] = 2;
+        animation.animationMap[lq::animation_ids::AutoAttack] = 6;
+        animation.animationMap[lq::animation_ids::Run] = 4;
+        animation.animationMap[lq::animation_ids::Idle2] = 0;
+        animation.animationMap[lq::animation_ids::Idle] = 10; // 11 is T-Pose, 10 is ninja idle
+        animation.animationMap[lq::animation_ids::Spin] = 5;
+        animation.animationMap[lq::animation_ids::Slash] = 6;
+        animation.animationMap[lq::animation_ids::SpellcastUp] = 7;
+        animation.animationMap[lq::animation_ids::SpellcastForward] = 8;
+        animation.animationMap[lq::animation_ids::Roll] = 9;
+        animation.ChangeAnimationById(lq::animation_ids::Idle);
 
         registry->emplace<PartyMemberComponent>(id, id);
         sys->partySystem->AddMember(id);

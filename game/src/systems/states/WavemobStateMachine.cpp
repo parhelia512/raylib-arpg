@@ -1,4 +1,5 @@
 #include "WavemobStateMachine.hpp"
+#include "animation/RpgAnimationIds.hpp"
 
 #include "Systems.hpp"
 
@@ -58,7 +59,7 @@ namespace lq
             combatable.onDeath.Subscribe([this](const entt::entity entity) { OnDeath(entity); });
             // ----------------------------
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+            animation.ChangeAnimationById(lq::animation_ids::Idle);
         }
 
         void OnExit(entt::entity entity) override
@@ -120,7 +121,7 @@ namespace lq
         {
             const auto& targetPos = registry->get<sage::sgTransform>(target).GetWorldPos();
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::WALK, 2);
+            animation.ChangeAnimationById(lq::animation_ids::Walk, 2);
             sys->engine.actorMovementSystem->PathfindToLocation(self, targetPos);
         }
 
@@ -253,7 +254,7 @@ namespace lq
             auto& bb = registry->get<sage::Collideable>(self).worldBoundingBox;
             sys->engine.navigationGridSystem->MarkSquareAreaOccupied(bb, false);
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::DEATH, true);
+            animation.ChangeAnimationById(lq::animation_ids::Death, true);
             auto& state = registry->get<WavemobState>(self);
             auto sub =
                 animation.onAnimationEnd.Subscribe([this](entt::entity _entity) { destroyEntity(_entity); });

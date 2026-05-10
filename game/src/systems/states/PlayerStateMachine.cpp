@@ -1,4 +1,5 @@
 #include "PlayerStateMachine.hpp"
+#include "animation/RpgAnimationIds.hpp"
 
 #include "Systems.hpp"
 
@@ -46,7 +47,7 @@ namespace lq
         void OnEnter(entt::entity entity) override
         {
             auto& animation = registry->get<sage::Animation>(entity);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+            animation.ChangeAnimationById(lq::animation_ids::Idle);
         }
 
         void OnExit(entt::entity entity) override
@@ -103,7 +104,7 @@ namespace lq
                     self, sys->engine.cursor->getFirstCollision().point))
             {
                 auto& animation = registry->get<sage::Animation>(self);
-                animation.ChangeAnimationByEnum(sage::AnimationEnum::RUN);
+                animation.ChangeAnimationById(lq::animation_ids::Run);
                 auto sub = moveable.onDestinationReached.Subscribe(
                     [this](entt::entity _entity) { onTargetReached(_entity); });
                 state.ManageSubscription(sub);
@@ -182,7 +183,7 @@ namespace lq
             state.ManageSubscription(std::move(sub1));
 
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::RUN);
+            animation.ChangeAnimationById(lq::animation_ids::Run);
         }
 
         void OnExit(entt::entity self) override
@@ -223,7 +224,7 @@ namespace lq
             data[entity] = {originalDestination, previousState, GetTime(), 1.5f, 0, 4};
 
             auto& animation = registry->get<sage::Animation>(entity);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+            animation.ChangeAnimationById(lq::animation_ids::Idle);
         }
 
         void OnExit(entt::entity self) override
@@ -250,11 +251,11 @@ namespace lq
         void OnEnter(entt::entity self) override
         {
             auto& playerDiag = registry->get<DialogComponent>(self);
-            registry->get<sage::Animation>(self).ChangeAnimationByEnum(sage::AnimationEnum::TALK);
+            registry->get<sage::Animation>(self).ChangeAnimationById(lq::animation_ids::Talk);
             if (registry->any_of<sage::Animation>(playerDiag.dialogTarget))
             {
                 registry->get<sage::Animation>(playerDiag.dialogTarget)
-                    .ChangeAnimationByEnum(sage::AnimationEnum::TALK);
+                    .ChangeAnimationById(lq::animation_ids::Talk);
             }
 
             // Rotate to look at NPC
@@ -276,7 +277,7 @@ namespace lq
             if (registry->any_of<sage::Animation>(playerDiag.dialogTarget))
             {
                 registry->get<sage::Animation>(playerDiag.dialogTarget)
-                    .ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+                    .ChangeAnimationById(lq::animation_ids::Idle);
             }
             playerDiag.dialogTarget = entt::null;
             sys->playerAbilitySystem->SubscribeToUserInput();
@@ -336,7 +337,7 @@ namespace lq
             state.ManageSubscription(std::move(sub1));
 
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::RUN);
+            animation.ChangeAnimationById(lq::animation_ids::Run);
         }
 
         void OnExit(entt::entity self) override
@@ -376,7 +377,7 @@ namespace lq
         void OnEnter(entt::entity self) override
         {
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::RUN);
+            animation.ChangeAnimationById(lq::animation_ids::Run);
 
             auto& moveableActor = registry->get<sage::MoveableActor>(self);
 
@@ -452,7 +453,7 @@ namespace lq
         void OnEnter(entt::entity entity) override
         {
             auto& animation = registry->get<sage::Animation>(entity);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::AUTOATTACK);
+            animation.ChangeAnimationById(lq::animation_ids::AutoAttack);
 
             auto abilityEntity = sys->abilityFactory->GetAbility(entity, AbilityEnum::PLAYER_AUTOATTACK);
             registry->get<Ability>(abilityEntity).startCast.Publish(abilityEntity);

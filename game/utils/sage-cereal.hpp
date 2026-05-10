@@ -22,7 +22,7 @@ namespace sage
     void serialize(Archive& archive, AnimationParams& anim)
     {
         archive(
-            cereal::make_nvp("animEnum", anim.animEnum),
+            cereal::make_nvp("animationId", anim.animationId),
             cereal::make_nvp("animSpeed", anim.animSpeed),
             cereal::make_nvp("oneShot", anim.oneShot),
             cereal::make_nvp("animationDelay", anim.animationDelay));

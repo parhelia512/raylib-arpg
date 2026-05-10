@@ -1,4 +1,5 @@
 #include "AbilityFactory.hpp"
+#include "animation/RpgAnimationIds.hpp"
 
 #include "abilities/AbilityData.hpp"
 #include "abilities/AbilityFunctions.hpp"
@@ -175,7 +176,7 @@ namespace lq
         ad.base.AddOptionalBehaviour(AbilityBehaviourOptional::REPEAT_AUTO);
         ad.base.targetType = AbilityTargetType::TARGET_ENEMY;
 
-        ad.animationParams.animEnum = sage::AnimationEnum::SLASH;
+        ad.animationParams.animationId = lq::animation_ids::Slash;
         ad.animationParams.animSpeed = 3;
         ad.animationParams.animationDelay = 0;
     }
@@ -200,7 +201,7 @@ namespace lq
             AbilityBehaviour::ATTACK_AOE_POINT);
         ad.base.AddOptionalBehaviour(AbilityBehaviourOptional::INDICATOR);
 
-        ad.animationParams.animEnum = sage::AnimationEnum::SPELLCAST_UP;
+        ad.animationParams.animationId = lq::animation_ids::SpellcastUp;
         ad.animationParams.animSpeed = 3;
         ad.animationParams.oneShot = true;
         ad.animationParams.animationDelay = 0;
@@ -228,7 +229,7 @@ namespace lq
             AbilityBehaviour::MOVEMENT_PROJECTILE | AbilityBehaviour::CAST_INSTANT |
             AbilityBehaviour::ATTACK_AOE_POINT);
 
-        ad.animationParams.animEnum = sage::AnimationEnum::SPELLCAST_FWD;
+        ad.animationParams.animationId = lq::animation_ids::SpellcastForward;
         ad.animationParams.animationDelay = 0;
         ad.animationParams.oneShot = true;
 
@@ -248,7 +249,7 @@ namespace lq
             AbilityBehaviour::MOVEMENT_HITSCAN | AbilityBehaviour::CAST_INSTANT | AbilityBehaviour::ATTACK_TARGET);
         ad.base.AddOptionalBehaviour(AbilityBehaviourOptional::REPEAT_AUTO);
 
-        ad.animationParams.animEnum = sage::AnimationEnum::AUTOATTACK;
+        ad.animationParams.animationId = lq::animation_ids::AutoAttack;
     }
 
     void CreateLightningBallAbility(entt::registry* registry, entt::entity abilityEntity)
@@ -270,7 +271,7 @@ namespace lq
             AbilityBehaviour::MOVEMENT_PROJECTILE | AbilityBehaviour::CAST_INSTANT |
             AbilityBehaviour::ATTACK_AOE_POINT);
 
-        ad.animationParams.animEnum = sage::AnimationEnum::SPELLCAST_FWD;
+        ad.animationParams.animationId = lq::animation_ids::SpellcastForward;
         ad.animationParams.animationDelay = 1; // Animation delay not a thing
         ad.animationParams.animSpeed = 4;
         ad.animationParams.oneShot = true;
@@ -296,7 +297,7 @@ namespace lq
             AbilityBehaviour::SPAWN_AT_CASTER | AbilityBehaviour::FOLLOW_CASTER |
             AbilityBehaviour::MOVEMENT_STATIONARY | AbilityBehaviour::CAST_INSTANT |
             AbilityBehaviour::ATTACK_AOE_POINT);
-        ad.animationParams.animEnum = sage::AnimationEnum::SPIN;
+        ad.animationParams.animationId = lq::animation_ids::Spin;
         ad.animationParams.animSpeed = 5;
         ad.animationParams.oneShot = true;
         ad.animationParams.animationDelay = 0;

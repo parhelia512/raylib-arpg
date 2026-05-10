@@ -3,6 +3,7 @@
 //
 
 #include "EquipmentSystem.hpp"
+#include "animation/RpgAnimationIds.hpp"
 
 #include "ControllableActorSystem.hpp"
 #include "engine/Camera.hpp"
@@ -127,7 +128,7 @@ namespace lq
         sys->engine.transformSystem->SetPosition(entity, {0, -999, 0});
 
         auto current = animation.current;
-        animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE2);
+        animation.ChangeAnimationById(lq::animation_ids::Idle2);
         updateCharacterPreviewPose(entity);
         sys->engine.camera->SetCamera({-1.5, -992.5, 1.5}, {0.5, -992.5, 0});
 
@@ -168,7 +169,7 @@ namespace lq
         sys->engine.camera->SetCamera({6, -996, 12}, {0, -996, 0});
 
         auto current = animation.current;
-        animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+        animation.ChangeAnimationById(lq::animation_ids::Idle);
         updateCharacterPreviewPose(entity);
 
         // TODO: inefficient

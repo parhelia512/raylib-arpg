@@ -3,6 +3,7 @@
 //
 
 #include "ExampleScene.hpp"
+#include "animation/RpgAnimationIds.hpp"
 
 #include "components/States.hpp"
 #include "MapLoader.hpp"
@@ -41,7 +42,7 @@ namespace lq
         sys->engine.fullscreenTextOverlayFactory->onOverlayEnding.Subscribe([actor, this]() {
             sys->stateMachines->playerStateMachine->ChangeState(actor, PlayerStateEnum::InDialog);
             auto& animationComponent = registry->get<sage::Animation>(actor);
-            animationComponent.ChangeAnimationByEnum(sage::AnimationEnum::IDLE2);
+            animationComponent.ChangeAnimationById(lq::animation_ids::Idle2);
         });
         auto& dialogComponent = registry->get<DialogComponent>(actor);
         dialogComponent.dialogTarget = conversationEntity;

@@ -1,4 +1,5 @@
 #include "PartyMemberStateMachine.hpp"
+#include "animation/RpgAnimationIds.hpp"
 
 #include "StateMachines.hpp"
 #include "Systems.hpp"
@@ -52,7 +53,7 @@ namespace lq
         void OnEnter(entt::entity entity) override
         {
             auto& animation = registry->get<sage::Animation>(entity);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+            animation.ChangeAnimationById(lq::animation_ids::Idle);
         }
 
         void OnExit(entt::entity entity) override
@@ -124,7 +125,7 @@ namespace lq
         {
             assert(actorTarget != entt::null);
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::RUN);
+            animation.ChangeAnimationById(lq::animation_ids::Run);
 
             auto& moveable = registry->get<sage::MoveableActor>(self);
             moveable.actorTarget.emplace(actorTarget);
@@ -223,7 +224,7 @@ namespace lq
             state.ManageSubscription(std::move(sub1));
 
             auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+            animation.ChangeAnimationById(lq::animation_ids::Idle);
         }
 
         void OnExit(const entt::entity self) override
@@ -291,7 +292,7 @@ namespace lq
         {
             assert(registry->any_of<DestinationUnreachableData>(self));
             auto& animation{registry->get<sage::Animation>(self)};
-            animation.ChangeAnimationByEnum(sage::AnimationEnum::IDLE);
+            animation.ChangeAnimationById(lq::animation_ids::Idle);
         }
 
         void OnExit(const entt::entity self) override
