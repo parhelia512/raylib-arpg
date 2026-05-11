@@ -5,8 +5,8 @@
 #include "LootSystem.hpp"
 
 #include "components/InventoryComponent.hpp"
-#include "GameUiFactory.hpp"
 #include "Systems.hpp"
+#include "ui/GameUiFactory.hpp"
 
 #include "ControllableActorSystem.hpp"
 #include "engine/AudioManager.hpp"
@@ -32,7 +32,7 @@ namespace lq
                 sage::Settings::TARGET_SCREEN_WIDTH,
                 sage::Settings::TARGET_SCREEN_HEIGHT);
             openLootWindow =
-                GameUiFactory::CreateLootWindow(registry, sys->uiEngine.get(), clickedChest, screenPos);
+                GameUiFactory::CreateLootWindow(registry, &sys->UI(), clickedChest, screenPos);
             openLootWindow->onHide.Subscribe([this] { openLootWindow = nullptr; });
             sys->engine.audioManager->PlaySFX("resources/audio/sfx/chest_open.ogg");
         };

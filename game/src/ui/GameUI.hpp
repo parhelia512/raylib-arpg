@@ -12,17 +12,18 @@
 #include "raylib.h"
 
 #include <functional>
+#include <string>
+
+namespace sage
+{
+    class Window;
+}
 
 namespace lq
 {
     class LeverUIEngine;
     class Systems;
-    struct ItemComponent;
-    class EquipmentComponent;
     enum class EquipmentSlotName;
-    class PartySystem;
-    class PlayerAbilitySystem;
-    class ControllableActorSystem;
     class QuestManager;
 
     // Also displays description
@@ -88,7 +89,6 @@ namespace lq
 
     class CharacterStatText final : public sage::TextBox
     {
-
       public:
         enum class StatisticType
         {
@@ -102,6 +102,8 @@ namespace lq
             COUNT // must be last
         };
         StatisticType statisticType;
+        std::function<std::string()> contentProvider;
+
         void RetrieveInfo() override;
         ~CharacterStatText() override = default;
         CharacterStatText(
@@ -126,9 +128,10 @@ namespace lq
 
     class EquipmentCharacterPreview : public sage::ImageBox
     {
-        EquipmentSystem* equipmentSystem;
-
       public:
+        std::function<void(float width, float height)> previewGenerator;
+        std::function<RenderTexture*()> renderTextureProvider;
+
         void UpdateDimensions() override;
         void RetrieveInfo() override;
         void Draw2D() override;
@@ -141,14 +144,22 @@ namespace lq
 
     class PartyMemberPortrait : public sage::ImageBox
     {
-        PartySystem* partySystem;
-        EquipmentSystem* equipmentSystem;
         unsigned int memberNumber{};
         Texture portraitBgTex{};
         int width;
         int height;
 
       public:
+        std::function<entt::entity()> memberProvider;
+        std::function<void(Texture& target)> portraitProvider;
+        std::function<bool()> isSelectedProvider;
+        std::function<void()> onEmptyHovered;
+
+        sage::Event<PartyMemberPortrait*> onPortraitClicked;
+        sage::Event<PartyMemberPortrait*, sage::CellElement*> onDroppedOnPortrait;
+
+        [[nodiscard]] unsigned int GetMemberNumber() const;
+        [[nodiscard]] entt::entity GetMember() const;
         void HoverUpdate() override;
         void UpdateDimensions() override;
         void RetrieveInfo() override;
@@ -198,20 +209,27 @@ namespace lq
     class ItemSlot : public sage::ImageBox
     {
       protected:
-        EquipmentSystem* equipmentSystem;
         Texture backgroundTex{};
         void dropItemInWorld();
-        virtual void onItemDroppedToWorld() = 0;
         void updateRectangle(
             const sage::Dimensions& dimensions, const Vector2& offset, const sage::Dimensions& space) override;
 
-        [[nodiscard]] virtual entt::entity getItemId() = 0;
-        [[nodiscard]] virtual Texture getEmptyTex();
+        [[nodiscard]] Texture getEmptyTex() const;
 
       public:
+        std::function<entt::entity()> itemProvider;
+        std::function<Texture()> iconProvider;
+        std::function<Texture()> emptyTextureProvider;
+        std::function<sage::TooltipWindow*(Vector2 pos, sage::Window* parentWindow)> tooltipFactory;
+
+        sage::Event<ItemSlot*> onDroppedToWorld;
+        sage::Event<ItemSlot*, ItemSlot*> onDroppedOnSlot;
+
+        [[nodiscard]] entt::entity GetItemId() const;
         void Draw2D() override;
         void RetrieveInfo() override;
         void OnDrop(CellElement* receiver) override;
+        void ReceiveDrop(CellElement* droppedElement) override;
         void HoverUpdate() override;
         ItemSlot(
             LeverUIEngine* _engine,
@@ -223,16 +241,8 @@ namespace lq
 
     class EquipmentSlot : public ItemSlot
     {
-        [[nodiscard]] bool validateDrop(const ItemComponent& item) const;
-
-      protected:
-        Texture getEmptyTex() override;
-        void onItemDroppedToWorld() override;
-        [[nodiscard]] entt::entity getItemId() override;
-
       public:
         EquipmentSlotName itemType;
-        void ReceiveDrop(CellElement* droppedElement) override;
         EquipmentSlot(LeverUIEngine* _engine, sage::TableCell* _parent, EquipmentSlotName _itemType);
         friend class sage::TableCell;
     };
@@ -241,15 +251,12 @@ namespace lq
     {
       protected:
         entt::entity owner{};
-        void onItemDroppedToWorld() override;
-        [[nodiscard]] entt::entity getItemId() override;
 
       public:
         unsigned int row{};
         unsigned int col{};
         [[nodiscard]] entt::entity GetOwner() const;
         void SetOwner(entt::entity _owner);
-        void ReceiveDrop(CellElement* droppedElement) override;
         InventorySlot(
             LeverUIEngine* _engine,
             sage::TableCell* _parent,

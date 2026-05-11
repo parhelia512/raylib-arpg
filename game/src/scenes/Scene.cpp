@@ -16,9 +16,9 @@
 #include "DialogFactory.hpp"
 #include "engine/GameUiEngine.hpp"
 #include "GameObjectFactory.hpp"
-#include "GameUI.hpp"
-#include "GameUiFactory.hpp"
 #include "MapLoader.hpp"
+#include "ui/GameUI.hpp"
+#include "ui/GameUiFactory.hpp"
 
 #include "engine/UserInput.hpp"
 
@@ -90,14 +90,12 @@ namespace lq
 
     void Scene::initUI() const
     {
-        GameUiFactory::CreateAbilityRow(sys->uiEngine.get());
+        GameUiFactory::CreateAbilityRow(&sys->UI());
         auto w = sage::Settings::TARGET_SCREEN_WIDTH * 0.3;
         auto h = sage::Settings::TARGET_SCREEN_HEIGHT * 0.6;
-        auto* inventoryWindow =
-            GameUiFactory::CreateInventoryWindow(registry, sys->uiEngine.get(), {200, 50}, w, h);
-        auto* equipmentWindow =
-            GameUiFactory::CreateCharacterWindow(registry, sys->uiEngine.get(), {700, 50}, w, h);
-        auto* journalWindow = GameUiFactory::CreateJournalWindow(registry, sys->uiEngine.get(), {900, 150}, w, h);
+        auto* inventoryWindow = GameUiFactory::CreateInventoryWindow(registry, &sys->UI(), {200, 50}, w, h);
+        auto* equipmentWindow = GameUiFactory::CreateCharacterWindow(registry, &sys->UI(), {700, 50}, w, h);
+        auto* journalWindow = GameUiFactory::CreateJournalWindow(registry, &sys->UI(), {900, 150}, w, h);
 
         sys->engine.userInput->keyIPressed.Subscribe([inventoryWindow]() { inventoryWindow->ToggleHide(); });
         sys->engine.userInput->keyCPressed.Subscribe([equipmentWindow]() { equipmentWindow->ToggleHide(); });
@@ -105,9 +103,8 @@ namespace lq
 
         sys->engine.userInput->keyFPressed.Subscribe([this]() { sys->engine.camera->FocusSelectedActor(); });
 
-        GameUiFactory::CreatePartyPortraitsColumn(sys->uiEngine.get());
-        GameUiFactory::CreateGameWindowButtons(
-            sys->uiEngine.get(), inventoryWindow, equipmentWindow, journalWindow);
+        GameUiFactory::CreatePartyPortraitsColumn(&sys->UI());
+        GameUiFactory::CreateGameWindowButtons(&sys->UI(), inventoryWindow, equipmentWindow, journalWindow);
     }
 
     void Scene::Update()
@@ -118,7 +115,7 @@ namespace lq
         sys->engine.userInput->ListenForInput();
         sys->engine.cursor->Update();
         sys->engine.lightSubSystem->Update();
-        sys->uiEngine->Update();
+        sys->UI().Update();
         spiral->Update(GetFrameTime());
         sys->engine.cursorClickIndicator->Update();
         sys->engine.fullscreenTextOverlayFactory->Update();
@@ -154,13 +151,13 @@ namespace lq
 
     void Scene::DrawDebug2D()
     {
-        sys->uiEngine->DrawDebug2D();
+        sys->UI().DrawDebug2D();
     }
 
     void Scene::Draw2D()
     {
         sys->contextualDialogSystem->Draw2D();
-        sys->uiEngine->Draw2D();
+        sys->UI().Draw2D();
         sys->engine.cursor->Draw2D();
         sys->engine.fullscreenTextOverlayFactory->Draw2D();
     }

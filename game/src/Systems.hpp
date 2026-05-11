@@ -36,7 +36,6 @@ namespace lq
       public:
         sage::EngineSystems engine;
 
-        std::unique_ptr<LeverUIEngine> uiEngine;
         std::unique_ptr<DialogSystem> dialogSystem;
         std::unique_ptr<DialogFactory> dialogFactory;
         std::unique_ptr<NPCManager> npcManager;
@@ -69,5 +68,8 @@ namespace lq
         {
             return &engine;
         }
+
+        [[nodiscard]] LeverUIEngine& UI();
+        [[nodiscard]] const LeverUIEngine& UI() const;
     };
 } // namespace lq

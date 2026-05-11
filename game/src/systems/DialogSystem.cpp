@@ -10,8 +10,8 @@
 
 #include "../../../engine/Cursor.hpp"
 #include "engine/Cursor.hpp"
-#include "GameUiFactory.hpp"
 #include "Systems.hpp"
+#include "ui/GameUiFactory.hpp"
 
 namespace lq
 {
@@ -19,7 +19,7 @@ namespace lq
     void DialogSystem::progressConversation(const dialog::Conversation* conversation)
     {
         dialogWindow->Remove();
-        dialogWindow = GameUiFactory::CreateDialogWindow(sys->uiEngine.get(), conversation->owner);
+        dialogWindow = GameUiFactory::CreateDialogWindow(&sys->UI(), conversation->owner);
     }
 
     void DialogSystem::StartConversation(const sage::sgTransform& cutscenePose, entt::entity npc)
@@ -39,7 +39,7 @@ namespace lq
 
         dialogComponent.conversation->onConversationEnd.Subscribe([this, npc]() { endConversation(npc); });
 
-        dialogWindow = GameUiFactory::CreateDialogWindow(sys->uiEngine.get(), npc);
+        dialogWindow = GameUiFactory::CreateDialogWindow(&sys->UI(), npc);
     }
 
     void DialogSystem::endConversation(entt::entity npc) const

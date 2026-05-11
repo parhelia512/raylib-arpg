@@ -4,10 +4,10 @@
 
 #include "InventorySystem.hpp"
 
+#include "collision/RpgCollisionLayers.hpp"
 #include "components/InventoryComponent.hpp"
 #include "components/ItemComponent.hpp"
 #include "components/QuestComponents.hpp"
-#include "collision/RpgCollisionLayers.hpp"
 #include "ControllableActorSystem.hpp"
 #include "engine/Camera.hpp"
 #include "engine/components/Collideable.hpp"
@@ -16,9 +16,9 @@
 #include "engine/Cursor.hpp"
 #include "engine/GameUiEngine.hpp"
 #include "engine/systems/NavigationGridSystem.hpp"
-#include "GameUI.hpp"
 #include "ItemFactory.hpp"
 #include "Systems.hpp"
+#include "ui/GameUI.hpp"
 
 namespace lq
 {
@@ -47,7 +47,7 @@ namespace lq
         {
             if (!hover)
             {
-                sys->uiEngine->CreateErrorMessage("Item out of range.");
+                sys->UI().CreateErrorMessage("Item out of range.");
             }
             return false;
         }
@@ -58,7 +58,7 @@ namespace lq
         {
             if (!hover)
             {
-                sys->uiEngine->CreateErrorMessage("Item unreachable.");
+                sys->UI().CreateErrorMessage("Item unreachable.");
             }
         }
         else

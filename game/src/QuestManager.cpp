@@ -6,8 +6,8 @@
 
 #include "components/QuestComponents.hpp"
 #include "engine/GameUiEngine.hpp"
-#include "GameUI.hpp"
 #include "TextToRealFunction.hpp"
+#include "ui/GameUI.hpp"
 
 #include <cassert>
 #include <filesystem>
@@ -181,7 +181,7 @@ namespace lq
         auto& vec = connectionMap[entity];
         vec.push_back(quest.onStart.Subscribe([this](entt::entity _entity) {
             onQuestUpdate.Publish(_entity);
-            sys->uiEngine->CreateErrorMessage("Quest added to journal.");
+            sys->UI().CreateErrorMessage("Quest added to journal.");
         }));
         vec.push_back(
             quest.onCompleted.Subscribe([this](entt::entity _entity) { onQuestUpdate.Publish(_entity); }));

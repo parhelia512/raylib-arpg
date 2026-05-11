@@ -5,7 +5,7 @@
 #include "Systems.hpp"
 
 #include "collision/RpgCollisionLayers.hpp"
-#include "GameUI.hpp"
+#include "ui/GameUI.hpp"
 
 #include "engine/Camera.hpp"
 #include "system_includes.hpp"
@@ -18,7 +18,6 @@ namespace lq
         sage::Settings* _settings,
         sage::AudioManager* _audioManager)
         : engine(_registry, _keyMapping, _settings, _audioManager),
-          uiEngine(std::make_unique<LeverUIEngine>(_registry, this)),
           dialogSystem(std::make_unique<DialogSystem>(_registry, this)),
           dialogFactory(std::make_unique<DialogFactory>(_registry, this)),
           npcManager(std::make_unique<NPCManager>(_registry, this)),
@@ -37,7 +36,7 @@ namespace lq
           lootTable(std::make_unique<LootTable>(_registry, this)),
           lootSystem(std::make_unique<LootSystem>(_registry, this))
     {
-        engine.uiEngine = this->uiEngine.get();
+        engine.ReplaceUiEngine(std::make_unique<LeverUIEngine>(_registry, this));
         engine.collisionSystem->SetDefaultQueryMask(collision_masks::DefaultQuery);
         engine.cursor->SetCursorHoverMask(collision_masks::CursorHover);
         engine.cursor->SetCursorTexture(collision_layers::Npc, "cursor_talk");
@@ -46,5 +45,15 @@ namespace lq
         engine.cursor->SetCursorTexture(collision_layers::Chest, "cursor_pickup");
         engine.cursor->SetCursorTexture(collision_layers::Interactable, "cursor_interact");
         engine.cursor->SetCursorTexture(collision_layers::Building, "cursor_denied");
+    }
+
+    LeverUIEngine& Systems::UI()
+    {
+        return static_cast<LeverUIEngine&>(engine.UI());
+    }
+
+    const LeverUIEngine& Systems::UI() const
+    {
+        return static_cast<const LeverUIEngine&>(engine.UI());
     }
 } // namespace lq
