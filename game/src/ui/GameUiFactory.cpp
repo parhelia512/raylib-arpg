@@ -11,15 +11,10 @@
 #include "components/InventoryComponent.hpp"
 #include "components/ItemComponent.hpp"
 #include "components/PartyMemberComponent.hpp"
-#include "components/QuestComponents.hpp"
 #include "GameUI.hpp"
-#include "QuestManager.hpp"
 #include "Systems.hpp"
-#include "systems/ControllableActorSystem.hpp"
-#include "systems/EquipmentSystem.hpp"
-#include "systems/InventorySystem.hpp"
 #include "systems/PartySystem.hpp"
-#include "ui/RpgUiBindings.hpp"
+#include "ui/UIBindings.hpp"
 
 #include "engine/AudioManager.hpp"
 #include "engine/components/Renderable.hpp"
@@ -261,10 +256,7 @@ namespace lq
 
             // Padding/width in viewport-coord (target-coord scaled by scaleFactor).
             const sage::Padding tooltipPadding{
-                20.0f * scaleFactor,
-                20.0f * scaleFactor,
-                10.0f * scaleFactor,
-                6.0f * scaleFactor};
+                20.0f * scaleFactor, 20.0f * scaleFactor, 10.0f * scaleFactor, 6.0f * scaleFactor};
             const float w = sage::Settings::TARGET_SCREEN_WIDTH * 0.15f * scaleFactor;
             const float availableTextWidth = w - tooltipPadding.left - tooltipPadding.right;
 
@@ -408,7 +400,7 @@ namespace lq
         }
 
         {
-            auto actor = engine->sys->engine.cursor->GetSelectedActor();
+            auto actor = engine->sys->selectionSystem->GetSelectedActor();
             // Inventory grid
             auto cell = mainTableRow2->CreateTableCell();
             auto table = cell->CreateTableGrid(INVENTORY_MAX_ROWS, INVENTORY_MAX_COLS, 4);
@@ -699,7 +691,7 @@ namespace lq
             auto portraitCell = portraitRow->CreateTableCell();
 
             const auto& info =
-                engine->registry->get<PartyMemberComponent>(engine->sys->engine.cursor->GetSelectedActor());
+                engine->registry->get<PartyMemberComponent>(engine->sys->selectionSystem->GetSelectedActor());
             auto tex = info.portraitImg.texture;
             auto img = std::make_unique<DialogPortrait>(engine, portraitCell, tex);
             portraitCell->CreateImagebox(std::move(img));

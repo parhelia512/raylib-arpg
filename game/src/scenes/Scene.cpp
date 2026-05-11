@@ -3,7 +3,6 @@
 #include "system_includes.hpp"
 #include "Systems.hpp"
 
-#include "../../../engine/CursorClickIndicator.hpp"
 #include "engine/AudioManager.hpp"
 #include "engine/Camera.hpp"
 #include "engine/components/Renderable.hpp"
@@ -55,7 +54,7 @@ namespace lq
             }
         }
         registry->erase<sage::Spawner>(spawnerView.begin(), spawnerView.end());
-        sys->engine.cursor->SetSelectedActor(firstPlayer);
+        sys->selectionSystem->SetSelectedActor(firstPlayer);
     }
 
     void Scene::initAssets() const
@@ -85,7 +84,7 @@ namespace lq
         sys->questManager->InitQuestsFromDirectory();
 
         sys->dialogFactory->InitDialogFromDirectory(); // Must be called after all npcs are loaded
-        sys->engine.camera->FocusSelectedActor();
+        sys->engine.camera->FocusEntity(sys->selectionSystem->GetSelectedActor());
     }
 
     void Scene::initUI() const
@@ -101,7 +100,8 @@ namespace lq
         sys->engine.userInput->keyCPressed.Subscribe([equipmentWindow]() { equipmentWindow->ToggleHide(); });
         sys->engine.userInput->keyJPressed.Subscribe([journalWindow]() { journalWindow->ToggleHide(); });
 
-        sys->engine.userInput->keyFPressed.Subscribe([this]() { sys->engine.camera->FocusSelectedActor(); });
+        sys->engine.userInput->keyFPressed.Subscribe(
+            [this]() { sys->engine.camera->FocusEntity(sys->selectionSystem->GetSelectedActor()); });
 
         GameUiFactory::CreatePartyPortraitsColumn(&sys->UI());
         GameUiFactory::CreateGameWindowButtons(&sys->UI(), inventoryWindow, equipmentWindow, journalWindow);
@@ -117,7 +117,7 @@ namespace lq
         sys->engine.lightSubSystem->Update();
         sys->UI().Update();
         spiral->Update(GetFrameTime());
-        sys->engine.cursorClickIndicator->Update();
+        sys->cursorClickIndicator->Update();
         sys->engine.fullscreenTextOverlayFactory->Update();
         sys->engine.actorMovementSystem->Update();
         sys->engine.collisionSystem->Update();

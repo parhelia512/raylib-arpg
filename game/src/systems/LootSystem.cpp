@@ -65,7 +65,7 @@ namespace lq
         if (chest == entt::null) return false;
         // If the player walks too far from the lootable object, then remove the loot window.
         const auto& transform = registry->get<sage::sgTransform>(chest).GetWorldPos();
-        const auto& playerPos = registry->get<sage::sgTransform>(sys->engine.cursor->GetSelectedActor()).GetWorldPos();
+        const auto& playerPos = registry->get<sage::sgTransform>(sys->selectionSystem->GetSelectedActor()).GetWorldPos();
         return Vector3Distance(playerPos, transform) < LOOT_DISTANCE;
     }
 

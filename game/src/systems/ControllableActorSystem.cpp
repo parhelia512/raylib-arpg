@@ -142,7 +142,7 @@ namespace lq
     {
         registry->on_construct<ControllableActor>().connect<&ControllableActorSystem::onComponentAdded>(this);
         registry->on_destroy<ControllableActor>().connect<&ControllableActorSystem::onComponentRemoved>(this);
-        sys->engine.cursor->onSelectedActorChange.Subscribe(
+        sys->selectionSystem->onSelectedActorChange.Subscribe(
             [this](entt::entity oldActor, entt::entity newActor) { setSelectedActor(oldActor, newActor); });
     }
 } // namespace lq

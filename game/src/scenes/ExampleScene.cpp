@@ -34,7 +34,7 @@ namespace lq
         text.emplace_back("LeverQuest", 0.2f);
         sys->engine.fullscreenTextOverlayFactory->SetOverlay(text, 0.5f, 1.0f);
 
-        const auto actor = sys->engine.cursor->GetSelectedActor();
+        const auto actor = sys->selectionSystem->GetSelectedActor();
         assert(actor != entt::null);
         const auto conversationEntity = sys->engine.renderSystem->FindRenderableByName("Opening_Dialog");
         assert(conversationEntity != entt::null);
@@ -49,7 +49,7 @@ namespace lq
 
         auto& conversationComponent = registry->get<DialogComponent>(conversationEntity);
         conversationComponent.conversation->onConversationEnd.Subscribe([this]() {
-            sys->engine.camera->FocusSelectedActor();
+            sys->engine.camera->FocusEntity(sys->selectionSystem->GetSelectedActor());
             // sys->engine.audioManager->PlayMusic("resources/audio/music/bgm.ogg");
         });
     }

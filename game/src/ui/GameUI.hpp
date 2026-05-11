@@ -17,6 +17,7 @@
 namespace sage
 {
     class Window;
+    enum class PathfindFailureReason;
 }
 
 namespace lq
@@ -271,6 +272,7 @@ namespace lq
         void onWorldItemHover(entt::entity entity);
         void onNPCHover(entt::entity entity);
         void onStopWorldHover() const;
+        void onPathfindFailed(entt::entity entity, Vector3 destination, sage::PathfindFailureReason reason);
 
       public:
         Systems* sys{};

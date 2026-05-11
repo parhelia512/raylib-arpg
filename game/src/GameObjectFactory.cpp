@@ -264,7 +264,7 @@ namespace lq
         registry->emplace<PartyMemberComponent>(id, id);
         sys->partySystem->AddMember(id);
         registry->emplace<ControllableActor>(id);
-        sys->engine.cursor->SetSelectedActor(id);
+        sys->selectionSystem->SetSelectedActor(id);
         registry->emplace<DialogComponent>(id);
 
         // Combat

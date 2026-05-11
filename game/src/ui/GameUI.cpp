@@ -9,6 +9,7 @@
 #include "engine/Cursor.hpp"
 #include "engine/ResourceManager.hpp"
 #include "engine/slib.hpp"
+#include "engine/systems/ActorMovementSystem.hpp"
 
 #include "collision/RpgCollisionLayers.hpp"
 #include "components/ItemComponent.hpp"
@@ -23,9 +24,29 @@
 #include <format>
 #include <ranges>
 #include <sstream>
+#include <string>
+#include <string_view>
 
 namespace lq
 {
+    namespace
+    {
+        std::string_view GetPathfindFailureMessage(const sage::PathfindFailureReason reason)
+        {
+            switch (reason)
+            {
+            case sage::PathfindFailureReason::DestinationOutOfGrid:
+            case sage::PathfindFailureReason::ActorOutOfGrid:
+                return "Out of bounds.";
+            case sage::PathfindFailureReason::DestinationOutOfRange:
+                return "Out of range.";
+            case sage::PathfindFailureReason::DestinationUnreachable:
+                return "Destination unreachable.";
+            }
+
+            return "Destination unreachable.";
+        }
+    } // namespace
 
 #pragma region UIElements
 
@@ -195,7 +216,7 @@ namespace lq
         sage::HoriAlignment _horiAlignment)
         : ImageBox(_engine, _parent, OverflowBehaviour::SHRINK_TO_FIT, _vertAlignment, _horiAlignment)
     {
-        _engine->cursor->onSelectedActorChange.Subscribe([this](entt::entity, entt::entity) { RetrieveInfo(); });
+        _engine->sys->selectionSystem->onSelectedActorChange.Subscribe([this](entt::entity, entt::entity) { RetrieveInfo(); });
     }
 
     void EquipmentCharacterPreview::UpdateDimensions()
@@ -608,12 +629,24 @@ namespace lq
         }
     }
 
+    void LeverUIEngine::onPathfindFailed(
+        const entt::entity entity, Vector3, const sage::PathfindFailureReason reason)
+    {
+        if (entity != sys->selectionSystem->GetSelectedActor()) return;
+        CreateErrorMessage(std::string{GetPathfindFailureMessage(reason)});
+    }
+
     LeverUIEngine::LeverUIEngine(entt::registry* _registry, Systems* _sys)
         : GameUIEngine(_registry, _sys->Engine()), sys(_sys)
     {
         _sys->engine.cursor->onHover.Subscribe([this](const entt::entity entity) { onWorldItemHover(entity); });
         _sys->engine.cursor->onHover.Subscribe([this](const entt::entity entity) { onNPCHover(entity); });
         _sys->engine.cursor->onStopHover.Subscribe([this]() { onStopWorldHover(); });
+        _sys->engine.actorMovementSystem->onPathfindFailed.Subscribe(
+            [this](
+                const entt::entity entity, const Vector3 destination, const sage::PathfindFailureReason reason) {
+                onPathfindFailed(entity, destination, reason);
+            });
     }
 
 } // namespace lq

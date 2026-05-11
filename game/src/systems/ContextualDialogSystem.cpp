@@ -168,7 +168,7 @@ namespace lq
         {
             auto& trigger = registry->get<ContextualDialogTriggerComponent>(entity);
             const auto speaker = trigger.speaker;
-            const auto playerPos = registry->get<sage::sgTransform>(sys->engine.cursor->GetSelectedActor()).GetWorldPos();
+            const auto playerPos = registry->get<sage::sgTransform>(sys->selectionSystem->GetSelectedActor()).GetWorldPos();
 
             const auto& col = view.get<sage::Collideable>(entity);
             auto center =

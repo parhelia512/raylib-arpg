@@ -13,6 +13,7 @@
 #include "engine/systems/CollisionSystem.hpp"
 #include "engine/systems/NavigationGridSystem.hpp"
 
+#include "game/src/collision/RpgCollisionLayers.hpp"
 #include "game/src/components/QuestComponents.hpp"
 #include "game/src/GameObjectFactory.hpp"
 #include "game/src/ItemFactory.hpp"
@@ -47,60 +48,60 @@ namespace sage
     {
         if (objectName.find("_BLD_") != std::string::npos)
         {
-            return CollisionLayer::BUILDING;
+            return lq::collision_layers::Building;
         }
         if (objectName.find("_WALL_") != std::string::npos)
         {
-            return CollisionLayer::BUILDING;
+            return lq::collision_layers::Building;
         }
         if (objectName.find("_HOLE_") != std::string::npos)
         {
-            return CollisionLayer::BUILDING;
+            return lq::collision_layers::Building;
         }
         if (objectName.find("_BG_") != std::string::npos)
         {
-            return CollisionLayer::BACKGROUND;
+            return collision_layers::Background;
         }
         if (objectName.find("_FLOORSIMPLE_") != std::string::npos)
         {
             // Uses bounding box bounds for height (flat surfaces).
-            return CollisionLayer::GEOMETRY_SIMPLE;
+            return collision_layers::GeometrySimple;
         }
         if (objectName.find("_FLOORCOMPLEX_") != std::string::npos)
         {
             // Samples mesh for height/normal information
-            return CollisionLayer::GEOMETRY_COMPLEX;
+            return collision_layers::GeometryComplex;
         }
         if (objectName.find("_PROP_") != std::string::npos)
         {
-            return CollisionLayer::BUILDING;
+            return lq::collision_layers::Building;
         }
         if (objectName.find("_STAIRS_") != std::string::npos)
         {
-            return CollisionLayer::STAIRS;
+            return collision_layers::Stairs;
         }
         if (objectName.find("_MAPBASE_") != std::string::npos)
         {
-            return CollisionLayer::BACKGROUND;
+            return collision_layers::Background;
         }
         if (objectName.find("_ITEM_") != std::string::npos)
         {
-            return CollisionLayer::ITEM;
+            return lq::collision_layers::Item;
         }
         if (objectName.find("_DOOR_") != std::string::npos)
         {
-            return CollisionLayer::BUILDING;
+            return lq::collision_layers::Building;
         }
         if (objectName.find("_INTERACTABLE_") != std::string::npos)
         {
-            return CollisionLayer::INTERACTABLE;
+            return lq::collision_layers::Interactable;
         }
         if (objectName.find("_CHEST_") != std::string::npos)
         {
-            return CollisionLayer::CHEST;
+            return lq::collision_layers::Chest;
         }
 
-        return CollisionLayer::BACKGROUND; // by default, objects are ignored
+        return collision_layers::Background; // by default, objects are ignored
     }
 
     std::string readLine(std::ifstream& infile, const std::string& key)

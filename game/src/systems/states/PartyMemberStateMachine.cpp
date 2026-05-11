@@ -191,7 +191,7 @@ namespace lq
       public:
         void Update(const entt::entity self) override
         {
-            if (self == sys->engine.cursor->GetSelectedActor())
+            if (self == sys->selectionSystem->GetSelectedActor())
             {
                 stateController->ChangeState(self, PartyMemberStateEnum::Default);
             }
@@ -216,7 +216,7 @@ namespace lq
             assert(moveable.actorTarget.has_value());
             auto sub =
                 moveable.onMovementCancel.Subscribe([this](entt::entity entity) { onMovementCancelled(entity); });
-            auto sub1 = sys->engine.cursor->onSelectedActorChange.Subscribe(
+            auto sub1 = sys->selectionSystem->onSelectedActorChange.Subscribe(
                 [this](entt::entity, entt::entity entity) { onMovementCancelled(entity); });
 
             auto& state = registry->get<PartyMemberState>(self);
@@ -334,9 +334,9 @@ namespace lq
     void PartyMemberStateMachine::onComponentAdded(entt::entity self)
     {
         auto& state{registry->get<PartyMemberState>(self)};
-        const auto& leaderMoveable{registry->get<sage::MoveableActor>(sys->engine.cursor->GetSelectedActor())};
+        const auto& leaderMoveable{registry->get<sage::MoveableActor>(sys->selectionSystem->GetSelectedActor())};
         auto& moveable = registry->get<sage::MoveableActor>(self);
-        moveable.actorTarget.emplace(sys->engine.cursor->GetSelectedActor());
+        moveable.actorTarget.emplace(sys->selectionSystem->GetSelectedActor());
         auto& target = registry->get<sage::MoveableActor>(moveable.actorTarget.value());
         target.onStartMovement.Subscribe([this, self](const entt::entity) {
             static_cast<DefaultState*>(GetStateFromEnum(PartyMemberStateEnum::Default))->onLeaderMove(self);

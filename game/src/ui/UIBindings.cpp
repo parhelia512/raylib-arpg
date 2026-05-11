@@ -75,7 +75,7 @@ namespace lq
             dropped->RetrieveInfo();
         });
 
-        uiEngine->sys->engine.cursor->onSelectedActorChange.Subscribe(
+        uiEngine->sys->selectionSystem->onSelectedActorChange.Subscribe(
             [slotPtr](entt::entity, entt::entity) { slotPtr->RetrieveInfo(); });
 
         slot.RetrieveInfo();
@@ -95,29 +95,29 @@ namespace lq
         {
             switch (itemType)
             {
-                case EquipmentSlotName::HELM:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/helm.png");
-                case EquipmentSlotName::ARMS:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/arms.png");
-                case EquipmentSlotName::CHEST:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/chest.png");
-                case EquipmentSlotName::BELT:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/belt.png");
-                case EquipmentSlotName::BOOTS:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/boots.png");
-                case EquipmentSlotName::LEGS:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/legs.png");
-                case EquipmentSlotName::LEFTHAND:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/mainhand.png");
-                case EquipmentSlotName::RIGHTHAND:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/offhand.png");
-                case EquipmentSlotName::RING1:
-                case EquipmentSlotName::RING2:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/ring.png");
-                case EquipmentSlotName::AMULET:
-                    return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/amulet.png");
-                case EquipmentSlotName::COUNT:
-                    break;
+            case EquipmentSlotName::HELM:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/helm.png");
+            case EquipmentSlotName::ARMS:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/arms.png");
+            case EquipmentSlotName::CHEST:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/chest.png");
+            case EquipmentSlotName::BELT:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/belt.png");
+            case EquipmentSlotName::BOOTS:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/boots.png");
+            case EquipmentSlotName::LEGS:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/legs.png");
+            case EquipmentSlotName::LEFTHAND:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/mainhand.png");
+            case EquipmentSlotName::RIGHTHAND:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/offhand.png");
+            case EquipmentSlotName::RING1:
+            case EquipmentSlotName::RING2:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/ring.png");
+            case EquipmentSlotName::AMULET:
+                return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/amulet.png");
+            case EquipmentSlotName::COUNT:
+                break;
             }
 
             return sage::ResourceManager::GetInstance().TextureLoad("resources/textures/ui/empty-inv_slot.png");
@@ -144,27 +144,27 @@ namespace lq
 
             switch (itemType)
             {
-                case EquipmentSlotName::HELM:
-                    return item.HasFlag(ItemFlags::HELMET);
-                case EquipmentSlotName::AMULET:
-                    return item.HasFlag(ItemFlags::AMULET);
-                case EquipmentSlotName::CHEST:
-                    return item.HasFlag(ItemFlags::CHEST);
-                case EquipmentSlotName::BELT:
-                    return item.HasFlag(ItemFlags::BELT);
-                case EquipmentSlotName::ARMS:
-                    return item.HasFlag(ItemFlags::ARMS);
-                case EquipmentSlotName::LEGS:
-                    return item.HasFlag(ItemFlags::LEGS);
-                case EquipmentSlotName::BOOTS:
-                    return item.HasFlag(ItemFlags::BOOTS);
-                case EquipmentSlotName::RING1:
-                case EquipmentSlotName::RING2:
-                    return item.HasFlag(ItemFlags::RING);
-                case EquipmentSlotName::LEFTHAND:
-                case EquipmentSlotName::RIGHTHAND:
-                case EquipmentSlotName::COUNT:
-                    return false;
+            case EquipmentSlotName::HELM:
+                return item.HasFlag(ItemFlags::HELMET);
+            case EquipmentSlotName::AMULET:
+                return item.HasFlag(ItemFlags::AMULET);
+            case EquipmentSlotName::CHEST:
+                return item.HasFlag(ItemFlags::CHEST);
+            case EquipmentSlotName::BELT:
+                return item.HasFlag(ItemFlags::BELT);
+            case EquipmentSlotName::ARMS:
+                return item.HasFlag(ItemFlags::ARMS);
+            case EquipmentSlotName::LEGS:
+                return item.HasFlag(ItemFlags::LEGS);
+            case EquipmentSlotName::BOOTS:
+                return item.HasFlag(ItemFlags::BOOTS);
+            case EquipmentSlotName::RING1:
+            case EquipmentSlotName::RING2:
+                return item.HasFlag(ItemFlags::RING);
+            case EquipmentSlotName::LEFTHAND:
+            case EquipmentSlotName::RIGHTHAND:
+            case EquipmentSlotName::COUNT:
+                return false;
             }
 
             return false;
@@ -195,7 +195,7 @@ namespace lq
             if (itemId == entt::null) return false;
 
             const auto cursorPos = engine->cursor->getFirstNaviCollision();
-            const auto selectedActor = engine->cursor->GetSelectedActor();
+            const auto selectedActor = engine->sys->selectionSystem->GetSelectedActor();
             const auto playerPos = engine->registry->get<sage::sgTransform>(selectedActor).GetWorldPos();
             const auto dist = Vector3Distance(playerPos, cursorPos.point);
 
@@ -312,7 +312,7 @@ namespace lq
 
         if (followSelectedActor)
         {
-            engine->sys->engine.cursor->onSelectedActorChange.Subscribe(
+            engine->sys->selectionSystem->onSelectedActorChange.Subscribe(
                 [slotPtr](entt::entity, entt::entity current) { slotPtr->SetOwner(current); });
         }
 
@@ -326,14 +326,14 @@ namespace lq
         auto* ui = engine;
         auto* registry = engine->registry;
         auto* equipmentSystem = engine->sys->equipmentSystem.get();
-        auto* cursor = engine->sys->engine.cursor.get();
+        auto* selectionSystem = engine->sys->selectionSystem.get();
 
         bindItemPresentation(slot, engine);
 
         slot.emptyTextureProvider = [itemType = slot.itemType]() { return loadEquipmentEmptyTexture(itemType); };
 
-        slot.itemProvider = [registry, equipmentSystem, cursor, itemType = slot.itemType]() -> entt::entity {
-            const auto actor = cursor->GetSelectedActor();
+        slot.itemProvider = [registry, equipmentSystem, selectionSystem, itemType = slot.itemType]() -> entt::entity {
+            const auto actor = selectionSystem->GetSelectedActor();
             if (actor == entt::null || !registry->valid(actor) || !registry->all_of<EquipmentComponent>(actor))
             {
                 return entt::null;
@@ -341,43 +341,45 @@ namespace lq
             return equipmentSystem->GetItem(actor, itemType);
         };
 
-        slot.onDroppedToWorld.Subscribe([ui, equipmentSystem, cursor, slotPtr](ItemSlot*) {
+        slot.onDroppedToWorld.Subscribe([ui, equipmentSystem, selectionSystem, slotPtr](ItemSlot*) {
             const auto itemId = slotPtr->GetItemId();
             if (!trySpawnItemInWorld(ui, itemId)) return;
 
-            equipmentSystem->DestroyItem(cursor->GetSelectedActor(), slotPtr->itemType);
+            equipmentSystem->DestroyItem(selectionSystem->GetSelectedActor(), slotPtr->itemType);
         });
 
-        slot.onDroppedOnSlot.Subscribe([ui, registry, equipmentSystem, cursor](ItemSlot* source, ItemSlot* destination) {
-            auto* destinationSlot = dynamic_cast<EquipmentSlot*>(destination);
-            if (!destinationSlot) return;
+        slot.onDroppedOnSlot.Subscribe(
+            [ui, registry, equipmentSystem, selectionSystem](ItemSlot* source, ItemSlot* destination) {
+                auto* destinationSlot = dynamic_cast<EquipmentSlot*>(destination);
+                if (!destinationSlot) return;
 
-            if (auto* sourceSlot = dynamic_cast<InventorySlot*>(source))
-            {
-                const auto actor = cursor->GetSelectedActor();
-                auto& inventory = registry->get<InventoryComponent>(sourceSlot->GetOwner());
-                const auto itemId = inventory.GetItem(sourceSlot->row, sourceSlot->col);
-                if (itemId == entt::null) return;
-
-                const auto& item = registry->get<ItemComponent>(itemId);
-                if (!validateEquipmentDrop(destinationSlot->itemType, item)) return;
-
-                inventory.RemoveItem(sourceSlot->row, sourceSlot->col);
-                equipmentSystem->MoveItemToInventory(actor, destinationSlot->itemType);
-                equipmentSystem->EquipItem(actor, itemId, destinationSlot->itemType);
-                refreshDroppedSlots(source, destination, ui);
-            }
-            else if (const auto* sourceSlot = dynamic_cast<EquipmentSlot*>(source))
-            {
-                // TODO: This still relies on EquipmentSystem validation for legal slot swaps.
-                if (equipmentSystem->SwapItems(cursor->GetSelectedActor(), destinationSlot->itemType, sourceSlot->itemType))
+                if (auto* sourceSlot = dynamic_cast<InventorySlot*>(source))
                 {
+                    const auto actor = selectionSystem->GetSelectedActor();
+                    auto& inventory = registry->get<InventoryComponent>(sourceSlot->GetOwner());
+                    const auto itemId = inventory.GetItem(sourceSlot->row, sourceSlot->col);
+                    if (itemId == entt::null) return;
+
+                    const auto& item = registry->get<ItemComponent>(itemId);
+                    if (!validateEquipmentDrop(destinationSlot->itemType, item)) return;
+
+                    inventory.RemoveItem(sourceSlot->row, sourceSlot->col);
+                    equipmentSystem->MoveItemToInventory(actor, destinationSlot->itemType);
+                    equipmentSystem->EquipItem(actor, itemId, destinationSlot->itemType);
                     refreshDroppedSlots(source, destination, ui);
                 }
-            }
-        });
+                else if (const auto* sourceSlot = dynamic_cast<EquipmentSlot*>(source))
+                {
+                    // TODO: This still relies on EquipmentSystem validation for legal slot swaps.
+                    if (equipmentSystem->SwapItems(
+                            selectionSystem->GetSelectedActor(), destinationSlot->itemType, sourceSlot->itemType))
+                    {
+                        refreshDroppedSlots(source, destination, ui);
+                    }
+                }
+            });
 
-        engine->sys->engine.cursor->onSelectedActorChange.Subscribe(
+        engine->sys->selectionSystem->onSelectedActorChange.Subscribe(
             [slotPtr](entt::entity, entt::entity) { slotPtr->RetrieveInfo(); });
 
         engine->sys->equipmentSystem->onEquipmentUpdated.Subscribe(
@@ -391,7 +393,7 @@ namespace lq
     {
         entt::entity getSelectedActor(LeverUIEngine* engine)
         {
-            return engine->sys->engine.cursor->GetSelectedActor();
+            return engine->sys->selectionSystem->GetSelectedActor();
         }
 
         bool hasComponent(entt::registry* registry, const entt::entity entity)
@@ -418,21 +420,21 @@ namespace lq
 
             switch (statisticType)
             {
-                case CharacterStatText::StatisticType::STRENGTH:
-                    return std::format("Strength: {}", combatable.baseStatistics.strength);
-                case CharacterStatText::StatisticType::AGILITY:
-                    return std::format("Agility: {}", combatable.baseStatistics.agility);
-                case CharacterStatText::StatisticType::INTELLIGENCE:
-                    return std::format("Intelligence: {}", combatable.baseStatistics.intelligence);
-                case CharacterStatText::StatisticType::CONSTITUTION:
-                    return std::format("Constitution: {}", combatable.baseStatistics.constitution);
-                case CharacterStatText::StatisticType::WITS:
-                    return std::format("Wits: {}", combatable.baseStatistics.wits);
-                case CharacterStatText::StatisticType::MEMORY:
-                    return std::format("Memory: {}", combatable.baseStatistics.memory);
-                case CharacterStatText::StatisticType::NAME:
-                case CharacterStatText::StatisticType::COUNT:
-                    break;
+            case CharacterStatText::StatisticType::STRENGTH:
+                return std::format("Strength: {}", combatable.baseStatistics.strength);
+            case CharacterStatText::StatisticType::AGILITY:
+                return std::format("Agility: {}", combatable.baseStatistics.agility);
+            case CharacterStatText::StatisticType::INTELLIGENCE:
+                return std::format("Intelligence: {}", combatable.baseStatistics.intelligence);
+            case CharacterStatText::StatisticType::CONSTITUTION:
+                return std::format("Constitution: {}", combatable.baseStatistics.constitution);
+            case CharacterStatText::StatisticType::WITS:
+                return std::format("Wits: {}", combatable.baseStatistics.wits);
+            case CharacterStatText::StatisticType::MEMORY:
+                return std::format("Memory: {}", combatable.baseStatistics.memory);
+            case CharacterStatText::StatisticType::NAME:
+            case CharacterStatText::StatisticType::COUNT:
+                break;
             }
 
             return "";
@@ -458,7 +460,7 @@ namespace lq
             return getStatText(registry, getSelectedActor(ui), statisticType);
         };
 
-        engine->sys->engine.cursor->onSelectedActorChange.Subscribe(
+        engine->sys->selectionSystem->onSelectedActorChange.Subscribe(
             [statTextPtr](entt::entity, entt::entity) { statTextPtr->RetrieveInfo(); });
 
         engine->sys->equipmentSystem->onEquipmentUpdated.Subscribe(
@@ -482,7 +484,7 @@ namespace lq
 
         preview.renderTextureProvider = [ui]() { return getSelectedRenderTexture(ui); };
 
-        engine->sys->engine.cursor->onSelectedActorChange.Subscribe(
+        engine->sys->selectionSystem->onSelectedActorChange.Subscribe(
             [previewPtr](entt::entity, entt::entity) { previewPtr->RetrieveInfo(); });
 
         engine->sys->equipmentSystem->onEquipmentUpdated.Subscribe(
@@ -497,6 +499,7 @@ namespace lq
         auto* ui = engine;
         auto* registry = engine->registry;
         auto* cursor = engine->sys->engine.cursor.get();
+        auto* selectionSystem = engine->sys->selectionSystem.get();
         auto* partySystem = engine->sys->partySystem.get();
         auto* equipmentSystem = engine->sys->equipmentSystem.get();
 
@@ -509,9 +512,9 @@ namespace lq
             cursor->Enable();
         };
 
-        portrait.isSelectedProvider = [cursor, portraitPtr]() {
+        portrait.isSelectedProvider = [selectionSystem, portraitPtr]() {
             const auto member = portraitPtr->GetMember();
-            return member != entt::null && cursor->GetSelectedActor() == member;
+            return member != entt::null && selectionSystem->GetSelectedActor() == member;
         };
 
         portrait.portraitProvider = [registry, equipmentSystem, portraitPtr](Texture& target) {
@@ -523,13 +526,14 @@ namespace lq
             target.id = info.portraitImg.texture.id;
         };
 
-        portrait.onPortraitClicked.Subscribe([cursor](PartyMemberPortrait* clickedPortrait) {
+        portrait.onPortraitClicked.Subscribe([selectionSystem](PartyMemberPortrait* clickedPortrait) {
             const auto member = clickedPortrait->GetMember();
-            if (member != entt::null) cursor->SetSelectedActor(member);
+            if (member != entt::null) selectionSystem->SetSelectedActor(member);
         });
 
         portrait.onDroppedOnPortrait.Subscribe(
-            [ui, registry, cursor, equipmentSystem](PartyMemberPortrait* destination, sage::CellElement* droppedElement) {
+            [ui, registry, selectionSystem, equipmentSystem](
+                PartyMemberPortrait* destination, sage::CellElement* droppedElement) {
                 const auto receiver = destination->GetMember();
                 if (!hasComponent(registry, receiver) || !registry->all_of<InventoryComponent>(receiver)) return;
 
@@ -557,7 +561,7 @@ namespace lq
                 }
                 else if (auto* dropped = dynamic_cast<EquipmentSlot*>(droppedElement))
                 {
-                    const auto sender = cursor->GetSelectedActor();
+                    const auto sender = selectionSystem->GetSelectedActor();
                     if (!hasComponent(registry, sender) || !registry->all_of<EquipmentComponent>(sender)) return;
 
                     auto& receiverInventory = registry->get<InventoryComponent>(receiver);
@@ -577,7 +581,7 @@ namespace lq
                 }
             });
 
-        engine->sys->engine.cursor->onSelectedActorChange.Subscribe(
+        engine->sys->selectionSystem->onSelectedActorChange.Subscribe(
             [portraitPtr](entt::entity, entt::entity) { portraitPtr->RetrieveInfo(); });
 
         engine->sys->partySystem->onPartyChange.Subscribe([portraitPtr]() { portraitPtr->RetrieveInfo(); });

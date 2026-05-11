@@ -8,6 +8,8 @@
 #include "ui/GameUI.hpp"
 
 #include "engine/Camera.hpp"
+#include "engine/components/MoveableActor.hpp"
+#include "engine/components/NavigationGridSquare.hpp"
 #include "system_includes.hpp"
 
 namespace lq
@@ -18,6 +20,8 @@ namespace lq
         sage::Settings* _settings,
         sage::AudioManager* _audioManager)
         : engine(_registry, _keyMapping, _settings, _audioManager),
+          selectionSystem(std::make_unique<SelectionSystem>()),
+          cursorClickIndicator(std::make_unique<CursorClickIndicator>(_registry, this)),
           dialogSystem(std::make_unique<DialogSystem>(_registry, this)),
           dialogFactory(std::make_unique<DialogFactory>(_registry, this)),
           npcManager(std::make_unique<NPCManager>(_registry, this)),
@@ -37,7 +41,38 @@ namespace lq
           lootSystem(std::make_unique<LootSystem>(_registry, this))
     {
         engine.ReplaceUiEngine(std::make_unique<LeverUIEngine>(_registry, this));
+        selectionSystem->onSelectedActorChange.Subscribe([this](entt::entity prev, entt::entity current) {
+            cursorClickIndicator->OnSelectedActorChanged(prev, current);
+        });
         engine.collisionSystem->SetDefaultQueryMask(collision_masks::DefaultQuery);
+        engine.cursor->SetNavigationRangeProvider([this, _registry](const Vector3& point) {
+            const auto selectedActor = selectionSystem->GetSelectedActor();
+            if (selectedActor == entt::null || !_registry->valid(selectedActor) ||
+                !_registry->all_of<sage::MoveableActor>(selectedActor))
+            {
+                return true;
+            }
+
+            const auto& moveable = _registry->get<sage::MoveableActor>(selectedActor);
+            sage::GridSquare minRange{};
+            sage::GridSquare maxRange{};
+            if (!engine.navigationGridSystem->GetPathfindRange(
+                    selectedActor, moveable.pathfindingBounds, minRange, maxRange))
+            {
+                return false;
+            }
+
+            return engine.navigationGridSystem->CheckWithinBounds(point, minRange, maxRange);
+        });
+        engine.cursor->SetNavigationValidityProvider([this, _registry](const Vector3& point) {
+            const auto selectedActor = selectionSystem->GetSelectedActor();
+            if (selectedActor == entt::null || !_registry->valid(selectedActor) ||
+                !_registry->all_of<sage::MoveableActor>(selectedActor))
+            {
+                return true;
+            }
+            return engine.navigationGridSystem->IsValidMove(point, selectedActor);
+        });
         engine.cursor->SetCursorHoverMask(collision_masks::CursorHover);
         engine.cursor->SetCursorTexture(collision_layers::Npc, "cursor_talk");
         engine.cursor->SetCursorTexture(collision_layers::Enemy, "cursor_attack");

@@ -39,7 +39,7 @@ namespace lq
         lastWorldItemHovered.pos = cursorPos;
         lastWorldItemHovered.reachable = false;
 
-        auto actorId = sys->engine.cursor->GetSelectedActor();
+        auto actorId = sys->selectionSystem->GetSelectedActor();
         const auto playerPos = registry->get<sage::sgTransform>(actorId).GetWorldPos();
 
         const auto dist = Vector3Distance(cursorPos, playerPos);
@@ -74,7 +74,7 @@ namespace lq
     {
         if (!CheckWorldItemRange()) return;
 
-        auto& inventoryComponent = registry->get<InventoryComponent>(sys->engine.cursor->GetSelectedActor());
+        auto& inventoryComponent = registry->get<InventoryComponent>(sys->selectionSystem->GetSelectedActor());
 
         if (inventoryComponent.AddItem(entity))
         {
