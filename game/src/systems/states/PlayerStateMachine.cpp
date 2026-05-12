@@ -520,11 +520,8 @@ namespace lq
     {
         if (!registry->any_of<DialogComponent>(target)) return;
 
-        if (registry->any_of<sage::MoveableActor>(target)) // Not all NPCs move
-        {
-            auto& moveable = registry->get<sage::MoveableActor>(self);
-            moveable.actorTarget = target;
-        }
+        auto& moveable = registry->get<sage::MoveableActor>(self);
+        moveable.actorTarget = target;
         ChangeState(self, PlayerStateEnum::MovingToTalkToNPC);
         //        ChangeStateExArgs<MovingToTalkToNPCState, entt::entity>(self, PlayerStateEnum::MovingToTalkToNPC,
         //        target);
