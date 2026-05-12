@@ -109,15 +109,19 @@ namespace lq
     void InventorySystem::onComponentAdded(entt::entity entity)
     {
         auto& component = registry->get<InventoryComponent>(entity);
-        component.onItemAddedSub = component.onItemAdded.Subscribe([this]() { inventoryUpdated(); });
-        component.onItemRemovedSub = component.onItemRemoved.Subscribe([this]() { inventoryUpdated(); });
+        auto& subscriptions = inventorySubscriptions[entity];
+        subscriptions.onItemAdded = component.onItemAdded.Subscribe([this]() { inventoryUpdated(); });
+        subscriptions.onItemRemoved = component.onItemRemoved.Subscribe([this]() { inventoryUpdated(); });
     }
 
     void InventorySystem::onComponentRemoved(entt::entity entity)
     {
-        auto& component = registry->get<InventoryComponent>(entity);
-        component.onItemAddedSub.UnSubscribe();
-        component.onItemRemovedSub.UnSubscribe();
+        const auto it = inventorySubscriptions.find(entity);
+        if (it == inventorySubscriptions.end()) return;
+
+        it->second.onItemAdded.UnSubscribe();
+        it->second.onItemRemoved.UnSubscribe();
+        inventorySubscriptions.erase(it);
     }
 
     InventorySystem::InventorySystem(entt::registry* _registry, Systems* _sys) : registry(_registry), sys(_sys)

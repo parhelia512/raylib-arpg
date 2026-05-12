@@ -8,6 +8,7 @@
 
 #include "entt/entt.hpp"
 #include "raylib.h"
+#include <unordered_map>
 
 namespace lq
 {
@@ -22,9 +23,16 @@ namespace lq
             bool reachable = false;
         };
 
+        struct InventorySubscriptions
+        {
+            sage::Subscription onItemAdded;
+            sage::Subscription onItemRemoved;
+        };
+
         entt::registry* registry;
         Systems* sys;
         LastHit lastWorldItemHovered;
+        std::unordered_map<entt::entity, InventorySubscriptions> inventorySubscriptions{};
         void onWorldItemClicked(entt::entity entity);
         void inventoryUpdated() const;
         void onComponentAdded(entt::entity entity);

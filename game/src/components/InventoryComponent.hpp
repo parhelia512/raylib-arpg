@@ -20,8 +20,6 @@ namespace lq
         std::array<std::array<entt::entity, INVENTORY_MAX_COLS>, INVENTORY_MAX_ROWS> items{}; // ItemComponent etc
 
       public:
-        sage::Subscription onItemAddedSub{};
-        sage::Subscription onItemRemovedSub{};
         sage::Subscription onInventoryFullSub{};
 
         sage::Event<> onItemAdded;
