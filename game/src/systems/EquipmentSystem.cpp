@@ -5,24 +5,20 @@
 #include "EquipmentSystem.hpp"
 #include "animation/RpgAnimationIds.hpp"
 
-#include "ControllableActorSystem.hpp"
 #include "engine/Camera.hpp"
 #include "engine/components/Animation.hpp"
 #include "engine/components/DeleteEntityComponent.hpp"
 #include "engine/components/Renderable.hpp"
 #include "engine/components/sgTransform.hpp"
 #include "engine/components/UberShaderComponent.hpp"
-#include "engine/LightManager.hpp"
 #include "engine/ResourceManager.hpp"
 #include "engine/slib.hpp"
-#include "engine/systems/AnimationSystem.hpp"
 
 #include "components/EquipmentComponent.hpp"
 #include "components/InventoryComponent.hpp"
 #include "components/ItemComponent.hpp"
 #include "components/PartyMemberComponent.hpp"
 #include "components/WeaponComponent.hpp"
-#include "PartySystem.hpp"
 #include "Systems.hpp"
 
 #include "engine/systems/TransformSystem.hpp"
@@ -31,6 +27,151 @@
 
 namespace lq
 {
+    namespace
+    {
+        constexpr unsigned int PreviewPoseFrame = 0;
+
+        struct PreviewCameraGuard
+        {
+            sage::Camera& camera;
+            Camera3D savedCamera;
+
+            explicit PreviewCameraGuard(sage::Camera& _camera)
+                : camera(_camera), savedCamera(*_camera.getRaylibCam())
+            {
+            }
+
+            ~PreviewCameraGuard()
+            {
+                *camera.getRaylibCam() = savedCamera;
+            }
+        };
+
+        void ApplyAnimationPose(
+            entt::registry& registry, entt::entity entity, int animationIndex, unsigned int frame)
+        {
+            auto& animation = registry.get<sage::Animation>(entity);
+            auto& renderable = registry.get<sage::Renderable>(entity);
+            const ModelAnimation& anim = animation.animations[animationIndex];
+            renderable.GetModel()->UpdateAnimation(anim, frame);
+            animation.onAnimationUpdated.Publish(entity);
+        }
+
+        void ApplyAnimationPose(entt::registry& registry, entt::entity entity, sage::AnimationId animationId)
+        {
+            auto& animation = registry.get<sage::Animation>(entity);
+            assert(animation.animationMap.contains(animationId));
+            ApplyAnimationPose(registry, entity, animation.animationMap.at(animationId), PreviewPoseFrame);
+        }
+
+        void RestoreAnimationPose(
+            entt::registry& registry, entt::entity entity, sage::Animation::AnimData animData)
+        {
+            auto& animation = registry.get<sage::Animation>(entity);
+            animation.current = animData;
+            ApplyAnimationPose(registry, entity, animation.current.index, animation.current.currentFrame);
+        }
+
+        void RecreateRenderTexture(RenderTexture& texture, float width, float height)
+        {
+            if (texture.id > 0)
+            {
+                UnloadRenderTexture(texture);
+            }
+            texture = LoadRenderTexture(static_cast<int>(width), static_cast<int>(height));
+        }
+
+        void DrawRenderablePreview(
+            entt::registry& registry, entt::entity entity, Vector3 position, float scale, Color tint)
+        {
+            auto& renderable = registry.get<sage::Renderable>(entity);
+
+            if (registry.any_of<sage::UberShaderComponent>(entity))
+            {
+                auto& uber = registry.get<sage::UberShaderComponent>(entity);
+                const auto originalFlags = uber.materialMap;
+
+                uber.ClearFlagAll(sage::UberShaderComponent::Lit);
+                uber.SetShaderBools();
+                renderable.GetModel()->Draw(position, scale, tint);
+
+                uber.materialMap = originalFlags;
+                uber.SetShaderBools();
+                return;
+            }
+
+            renderable.GetModel()->Draw(position, scale, tint);
+        }
+
+        Vector3 PreviewPositionForChild(
+            const sage::sgTransform& ownerTransform,
+            const sage::sgTransform& childTransform,
+            Vector3 previewOrigin)
+        {
+            return Vector3Add(
+                previewOrigin, Vector3Subtract(childTransform.GetWorldPos(), ownerTransform.GetWorldPos()));
+        }
+
+        void DrawEquipmentPreviewModels(
+            entt::registry& registry,
+            const EquipmentComponent& equipment,
+            const sage::sgTransform& ownerTransform,
+            Vector3 previewOrigin)
+        {
+            if (!equipment.worldModels.contains(EquipmentSlotName::LEFTHAND)) return;
+
+            const entt::entity leftHandEntity = equipment.worldModels.at(EquipmentSlotName::LEFTHAND);
+            if (!registry.valid(leftHandEntity)) return;
+
+            auto& leftHandTransform = registry.get<sage::sgTransform>(leftHandEntity);
+            const Vector3 previewPosition =
+                PreviewPositionForChild(ownerTransform, leftHandTransform, previewOrigin);
+            DrawRenderablePreview(
+                registry, leftHandEntity, previewPosition, leftHandTransform.GetScale().x, WHITE);
+        }
+
+        void RenderCharacterPreview(
+            entt::registry& registry,
+            sage::Camera& camera,
+            entt::entity entity,
+            RenderTexture& target,
+            float width,
+            float height,
+            sage::AnimationId animationId,
+            Vector3 cameraPosition,
+            Vector3 cameraTarget,
+            Color background,
+            bool drawEquipment)
+        {
+            auto& animation = registry.get<sage::Animation>(entity);
+            const auto current = animation.current;
+
+            constexpr Vector3 previewOrigin = {0, -999, 0};
+            PreviewCameraGuard cameraGuard(camera);
+            camera.SetCamera(cameraPosition, cameraTarget);
+            ApplyAnimationPose(registry, entity, animationId);
+
+            RecreateRenderTexture(target, width, height);
+            BeginTextureMode(target);
+            ClearBackground(background);
+            BeginMode3D(*camera.getRaylibCam());
+
+            const auto& transform = registry.get<sage::sgTransform>(entity);
+            DrawRenderablePreview(registry, entity, previewOrigin, transform.GetScale().x, WHITE);
+
+            if (drawEquipment)
+            {
+                const auto& equipment = registry.get<EquipmentComponent>(entity);
+                DrawEquipmentPreviewModels(registry, equipment, transform, previewOrigin);
+            }
+
+            EndMode3D();
+            EndTextureMode();
+
+            RestoreAnimationPose(registry, entity, current);
+        }
+    } // namespace
+
     void EquipmentSystem::updateCharacterWeaponPosition(entt::entity owner) const
     {
         const auto& equipment = registry->get<EquipmentComponent>(owner);
@@ -50,17 +191,6 @@ namespace lq
                 weaponRend.GetModel()->SetTransform(mat);
             }
         }
-    }
-
-    void EquipmentSystem::updateCharacterPreviewPose(entt::entity entity)
-    {
-        auto& animation = registry->get<sage::Animation>(entity);
-        auto& renderable = registry->get<sage::Renderable>(entity);
-        auto& animData = animation.current;
-        const ModelAnimation& anim = animation.animations[animData.index];
-        animData.currentFrame = anim.frameCount;
-        renderable.GetModel()->UpdateAnimation(anim, animData.currentFrame);
-        animation.onAnimationUpdated.Publish(entity);
     }
 
     void EquipmentSystem::instantiateWeapon(
@@ -90,7 +220,6 @@ namespace lq
         weapon.parentBoneName = "mixamorig:RightHand";
         weapon.owner = owner;
         const auto& renderable = registry->get<sage::Renderable>(owner);
-        const auto& transform = registry->get<sage::sgTransform>(owner);
         const auto& item = registry->get<ItemComponent>(itemId);
         registry->emplace<sage::Renderable>(
             weaponEntity,
@@ -112,103 +241,36 @@ namespace lq
     void EquipmentSystem::GeneratePortraitRenderTexture(entt::entity entity, float width, float height)
     {
         auto& info = registry->get<PartyMemberComponent>(entity);
-        // TODO: inefficient
-        UnloadTexture(info.portraitImg.texture);
-        info.portraitImg = LoadRenderTexture(width, height);
-
-        const auto& transform = registry->get<sage::sgTransform>(entity);
-        const auto& renderable = registry->get<sage::Renderable>(entity);
-        auto& animation = registry->get<sage::Animation>(entity);
-
-        // TODO: Should probably update the weapons again after taking the "photo"
-
-        auto oldPos = transform.GetWorldPos();
-        auto cameraPos = sys->engine.camera->GetPosition();
-        auto cameraTarget = sys->engine.camera->getRaylibCam()->target;
-        sys->engine.transformSystem->SetPosition(entity, {0, -999, 0});
-
-        auto current = animation.current;
-        animation.ChangeAnimationById(lq::animation_ids::Idle2);
-        updateCharacterPreviewPose(entity);
-        sys->engine.camera->SetCamera({-1.5, -992.5, 1.5}, {0.5, -992.5, 0});
-
-        info.portraitImg = LoadRenderTexture(width, height);
-        BeginTextureMode(info.portraitImg);
-        ClearBackground(BLACK);
-        BeginMode3D(*sys->engine.camera->getRaylibCam());
-        auto& uber = registry->get<sage::UberShaderComponent>(entity);
-        uber.ClearFlagAll(sage::UberShaderComponent::Lit);
-        uber.SetShaderBools();
-        uber.SetFlagAll(sage::UberShaderComponent::Lit);
-        renderable.GetModel()->Draw(transform.GetWorldPos(), transform.GetScale().x, WHITE);
-
-        EndMode3D();
-        EndTextureMode();
-
-        animation.current = current;
-        sys->engine.transformSystem->SetPosition(entity, oldPos);
-
-        sys->engine.camera->SetCamera(cameraPos, cameraTarget);
+        RenderCharacterPreview(
+            *registry,
+            *sys->engine.camera,
+            entity,
+            info.portraitImg,
+            width,
+            height,
+            lq::animation_ids::Idle2,
+            {-1.5, -992.5, 1.5},
+            {0.5, -992.5, 0},
+            BLACK,
+            false);
     }
 
     void EquipmentSystem::GenerateRenderTexture(entt::entity entity, float width, float height)
     {
 
         auto& equipment = registry->get<EquipmentComponent>(entity);
-        const auto& transform = registry->get<sage::sgTransform>(entity);
-        const auto& renderable = registry->get<sage::Renderable>(entity);
-        auto& animation = registry->get<sage::Animation>(entity);
-
-        // TODO: Should probably update the weapons again after taking the "photo"
-
-        auto oldPos = transform.GetWorldPos();
-        auto cameraPos = sys->engine.camera->GetPosition();
-        auto cameraTarget = sys->engine.camera->getRaylibCam()->target;
-
-        sys->engine.transformSystem->SetPosition(entity, {0, -999, 0});
-        sys->engine.camera->SetCamera({6, -996, 12}, {0, -996, 0});
-
-        auto current = animation.current;
-        animation.ChangeAnimationById(lq::animation_ids::Idle);
-        updateCharacterPreviewPose(entity);
-
-        // TODO: inefficient
-        UnloadTexture(equipment.renderTexture.texture);
-        equipment.renderTexture = LoadRenderTexture(width, height);
-
-        BeginTextureMode(equipment.renderTexture);
-        ClearBackground(BLANK);
-        BeginMode3D(*sys->engine.camera->getRaylibCam());
-        auto& uber = registry->get<sage::UberShaderComponent>(entity);
-        uber.ClearFlagAll(sage::UberShaderComponent::Lit);
-        uber.SetShaderBools();
-        uber.SetFlagAll(sage::UberShaderComponent::Lit);
-        renderable.GetModel()->Draw(transform.GetWorldPos(), transform.GetScale().x, WHITE);
-
-        if (equipment.worldModels.contains(EquipmentSlotName::LEFTHAND))
-        {
-            if (registry->valid(equipment.worldModels[EquipmentSlotName::LEFTHAND]))
-            {
-                auto& leftHandRenderable =
-                    registry->get<sage::Renderable>(equipment.worldModels[EquipmentSlotName::LEFTHAND]);
-                auto& leftHandTrans =
-                    registry->get<sage::sgTransform>(equipment.worldModels[EquipmentSlotName::LEFTHAND]);
-                auto& weaponUber =
-                    registry->get<sage::UberShaderComponent>(equipment.worldModels[EquipmentSlotName::LEFTHAND]);
-                weaponUber.ClearFlagAll(sage::UberShaderComponent::Lit);
-                weaponUber.SetShaderBools();
-                weaponUber.SetFlagAll(sage::UberShaderComponent::Lit);
-                leftHandRenderable.GetModel()->Draw(
-                    leftHandTrans.GetWorldPos(), leftHandTrans.GetScale().x, WHITE);
-            }
-        }
-
-        EndMode3D();
-        EndTextureMode();
-
-        animation.current = current;
-        sys->engine.transformSystem->SetPosition(entity, oldPos);
-        sys->engine.camera->SetCamera(cameraPos, cameraTarget);
+        RenderCharacterPreview(
+            *registry,
+            *sys->engine.camera,
+            entity,
+            equipment.renderTexture,
+            width,
+            height,
+            lq::animation_ids::Idle,
+            {6, -996, 12},
+            {0, -996, 0},
+            BLANK,
+            true);
     }
 
     entt::entity EquipmentSystem::GetItem(entt::entity owner, EquipmentSlotName itemType) const
@@ -251,7 +313,6 @@ namespace lq
         {
             if (equipment.worldModels.contains(itemType) && equipment.worldModels[itemType] != entt::null)
             {
-                registry->get<sage::sgTransform>(equipment.worldModels[itemType]);
                 sys->engine.transformSystem->SetParent(equipment.worldModels[itemType], entt::null);
                 registry->emplace<sage::DeleteEntityComponent>(equipment.worldModels[itemType]);
                 auto& weapon = registry->get<WeaponComponent>(equipment.worldModels[itemType]);

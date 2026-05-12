@@ -20,9 +20,6 @@ namespace lq
         entt::registry* registry;
         Systems* sys;
 
-        // TODO: Make this an independent class
-        entt::entity renderTextureSceneLight = entt::null;
-        void updateCharacterPreviewPose(entt::entity entity);
         void updateCharacterWeaponPosition(entt::entity owner) const;
         void instantiateWeapon(entt::entity owner, entt::entity itemId, EquipmentSlotName itemType) const;
         void onComponentAdded(entt::entity addedEntity);
