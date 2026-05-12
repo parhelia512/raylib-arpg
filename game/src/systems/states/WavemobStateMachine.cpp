@@ -151,8 +151,8 @@ namespace lq
                 [this, self](entt::entity _target) { onTargetPosUpdate(self, _target); });
 
             auto& state = registry->get<WavemobState>(self);
-            state.ManageSubscription(std::move(sub1));
-            state.ManageSubscription(std::move(sub));
+            state.BindSubscription(std::move(sub1));
+            state.BindSubscription(std::move(sub));
 
             onTargetPosUpdate(self, combatable.target);
         }
@@ -258,7 +258,7 @@ namespace lq
             auto& state = registry->get<WavemobState>(self);
             auto sub =
                 animation.onAnimationEnd.Subscribe([this](entt::entity _entity) { destroyEntity(_entity); });
-            state.ManageSubscription(std::move(sub));
+            state.BindSubscription(std::move(sub));
 
             auto abilityEntity = sys->abilityFactory->GetAbility(self, AbilityEnum::ENEMY_AUTOATTACK);
             registry->get<Ability>(abilityEntity).cancelCast.Publish(abilityEntity);

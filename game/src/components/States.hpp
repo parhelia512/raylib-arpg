@@ -8,7 +8,6 @@
 
 #include "entt/entt.hpp"
 
-#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -31,22 +30,6 @@ namespace lq
         }
     };
 
-    enum class PlayerStateEnum
-    {
-        Default,
-        MovingToLocation,
-        MovingToAttackEnemy,
-        MovingToInteractionTarget,
-        InDialog,
-        Combat
-    };
-
-    enum class PlayerInteractionKind
-    {
-        Talk,
-        Loot
-    };
-
     struct PlayerDefaultState
     {
     };
@@ -59,9 +42,13 @@ namespace lq
     {
     };
 
-    struct PlayerMovingToInteractionTargetState
+    struct PlayerMovingToTalkState
     {
-        PlayerInteractionKind kind{};
+        entt::entity target = entt::null;
+    };
+
+    struct PlayerMovingToLootState
+    {
         entt::entity target = entt::null;
     };
 
@@ -74,89 +61,32 @@ namespace lq
     {
     };
 
-    class PlayerState
+    struct PlayerState
     {
-        using StateVariant = std::variant<
+        using Variant = std::variant<
             PlayerDefaultState,
             PlayerMovingToLocationState,
             PlayerMovingToAttackEnemyState,
-            PlayerMovingToInteractionTargetState,
+            PlayerMovingToTalkState,
+            PlayerMovingToLootState,
             PlayerInDialogState,
             PlayerCombatState>;
 
-        StateVariant currentState = PlayerDefaultState{};
-        std::vector<sage::Subscription> currentStateSubscriptions;
+        Variant current = PlayerDefaultState{};
+        std::vector<sage::Subscription> subscriptions;
 
-      public:
-        void ManageSubscription(sage::Subscription newSubscription)
+        void BindSubscription(sage::Subscription newSubscription)
         {
-            currentStateSubscriptions.push_back(std::move(newSubscription));
-        }
-
-        template <typename StateType>
-        [[nodiscard]] bool Is() const
-        {
-            return std::holds_alternative<StateType>(currentState);
-        }
-
-        template <typename StateType>
-        StateType& Get()
-        {
-            return std::get<StateType>(currentState);
-        }
-
-        template <typename StateType>
-        const StateType& Get() const
-        {
-            return std::get<StateType>(currentState);
-        }
-
-        template <typename StateType>
-        void Set(StateType nextState)
-        {
-            currentState = std::move(nextState);
+            subscriptions.push_back(std::move(newSubscription));
         }
 
         void RemoveAllSubscriptions()
         {
-            for (auto& subscription : currentStateSubscriptions)
+            for (auto& subscription : subscriptions)
             {
                 subscription.UnSubscribe();
             }
-            currentStateSubscriptions.clear();
-        }
-
-        [[nodiscard]] PlayerStateEnum GetCurrentStateEnum() const
-        {
-            return std::visit(
-                []<typename T0>(const T0& state) {
-                    using StateType = std::decay_t<T0>;
-                    if constexpr (std::is_same_v<StateType, PlayerDefaultState>)
-                    {
-                        return PlayerStateEnum::Default;
-                    }
-                    else if constexpr (std::is_same_v<StateType, PlayerMovingToLocationState>)
-                    {
-                        return PlayerStateEnum::MovingToLocation;
-                    }
-                    else if constexpr (std::is_same_v<StateType, PlayerMovingToAttackEnemyState>)
-                    {
-                        return PlayerStateEnum::MovingToAttackEnemy;
-                    }
-                    else if constexpr (std::is_same_v<StateType, PlayerMovingToInteractionTargetState>)
-                    {
-                        return PlayerStateEnum::MovingToInteractionTarget;
-                    }
-                    else if constexpr (std::is_same_v<StateType, PlayerInDialogState>)
-                    {
-                        return PlayerStateEnum::InDialog;
-                    }
-                    else
-                    {
-                        return PlayerStateEnum::Combat;
-                    }
-                },
-                currentState);
+            subscriptions.clear();
         }
 
         ~PlayerState()

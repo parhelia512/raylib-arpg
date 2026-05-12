@@ -147,10 +147,10 @@ namespace lq
                 });
 
             auto& state = registry->get<PartyMemberState>(self);
-            state.ManageSubscription(std::move(sub));
-            state.ManageSubscription(std::move(sub1));
-            state.ManageSubscription(std::move(sub2));
-            state.ManageSubscription(std::move(sub3));
+            state.BindSubscription(std::move(sub));
+            state.BindSubscription(std::move(sub1));
+            state.BindSubscription(std::move(sub2));
+            state.BindSubscription(std::move(sub3));
 
             // entt::sink sink5{partyMember.followTarget->onTargetMovementCancelled};
             // state.AddConnection(sink5.connect<&FollowingLeaderState::onMovementCancelled>(this));
@@ -227,8 +227,8 @@ namespace lq
                 [this](entt::entity, entt::entity entity) { onMovementCancelled(entity); });
 
             auto& state = registry->get<PartyMemberState>(self);
-            state.ManageSubscription(std::move(sub));
-            state.ManageSubscription(std::move(sub1));
+            state.BindSubscription(std::move(sub));
+            state.BindSubscription(std::move(sub1));
 
             auto& animation = registry->get<sage::Animation>(self);
             animation.ChangeAnimationById(lq::animation_ids::Idle);

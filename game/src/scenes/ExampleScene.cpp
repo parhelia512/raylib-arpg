@@ -39,8 +39,8 @@ namespace lq
         assert(conversationEntity != entt::null);
 
         sys->engine.fullscreenTextOverlayFactory->onOverlayEnding.Subscribe([actor, conversationEntity, this]() {
-            const DialogTargetPayload payload{conversationEntity};
-            sys->stateMachines->playerStateMachine->ChangeState(actor, PlayerStateEnum::InDialog, payload);
+            sys->stateMachines->playerStateMachine->ChangeState(
+                actor, PlayerInDialogState{.target = conversationEntity});
             auto& animationComponent = registry->get<sage::Animation>(actor);
             animationComponent.ChangeAnimationById(lq::animation_ids::Idle2);
         });

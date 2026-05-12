@@ -2,60 +2,75 @@
 #pragma once
 
 #include "components/States.hpp"
-#include "engine/systems/states/StateMachine.hpp"
 #include "entt/entt.hpp"
 
-#include <memory>
-#include <unordered_map>
+#include <utility>
+#include <variant>
 
 namespace lq
 {
     class Systems;
 
-    struct DialogTargetPayload final : sage::StatePayload
-    {
-        entt::entity target = entt::null;
-
-        explicit DialogTargetPayload(const entt::entity _target) : target(_target)
-        {
-        }
-    };
-
-    struct PlayerInteractionPayload final : sage::StatePayload
-    {
-        PlayerInteractionKind kind{};
-        entt::entity target = entt::null;
-
-        PlayerInteractionPayload(const PlayerInteractionKind _kind, const entt::entity _target)
-            : kind(_kind), target(_target)
-        {
-        }
-    };
-
     class PlayerStateMachine final
     {
-        class DefaultState;
-        class MovingToLocationState;
-        class MovingToAttackEnemyState;
-        class MovingToInteractionTargetState;
-        class InDialogState;
-        class CombatState;
-
         entt::registry* registry;
         Systems* sys;
-        std::unordered_map<PlayerStateEnum, std::unique_ptr<sage::State>> states;
 
-        sage::State* GetStateFromEnum(PlayerStateEnum state);
+        // ===== Default =====
+        void onEnter(PlayerDefaultState&, entt::entity entity);
+        void onExit(PlayerDefaultState&, entt::entity)
+        {
+        }
+
+        // ===== MovingToLocation =====
+        void onEnter(PlayerMovingToLocationState&, entt::entity entity);
+        void onExit(PlayerMovingToLocationState&, entt::entity)
+        {
+        }
+
+        // ===== MovingToAttackEnemy =====
+        void onEnter(PlayerMovingToAttackEnemyState&, entt::entity entity);
+        void onExit(PlayerMovingToAttackEnemyState&, entt::entity)
+        {
+        }
+
+        // ===== MovingToTalk =====
+        void onEnter(PlayerMovingToTalkState&, entt::entity entity);
+        void onExit(PlayerMovingToTalkState&, entt::entity entity);
+
+        // ===== MovingToLoot =====
+        void onEnter(PlayerMovingToLootState&, entt::entity entity);
+        void onExit(PlayerMovingToLootState&, entt::entity)
+        {
+        }
+
+        // ===== InDialog =====
+        void onEnter(PlayerInDialogState&, entt::entity entity);
+        void onExit(PlayerInDialogState&, entt::entity entity);
+
+        // ===== Combat =====
+        void onEnter(PlayerCombatState&, entt::entity entity);
+        void onExit(PlayerCombatState&, entt::entity entity);
+
         void onComponentAdded(entt::entity entity);
         void onComponentRemoved(entt::entity entity);
 
-        void onFloorClick(entt::entity self, entt::entity);
-        void onChestClick(entt::entity self, entt::entity);
-        void onNPCLeftClick(entt::entity self, entt::entity target);
-        void onEnemyLeftClick(entt::entity self, entt::entity target);
+        void onFloorClick(entt::entity entity, entt::entity);
+        void onChestClick(entt::entity entity, entt::entity target);
+        void onNPCLeftClick(entt::entity entity, entt::entity target);
+        void onEnemyLeftClick(entt::entity entity, entt::entity target);
 
       public:
-        void ChangeState(entt::entity entity, PlayerStateEnum newState, const sage::StatePayload& payload = {});
+        template <typename NewState>
+        void ChangeState(entt::entity entity, NewState newState = {})
+        {
+            auto& state = registry->get<PlayerState>(entity);
+            std::visit([this, entity](auto& cur) { onExit(cur, entity); }, state.current);
+            state.RemoveAllSubscriptions();
+            state.current = std::move(newState);
+            onEnter(std::get<NewState>(state.current), entity);
+        }
+
         void Update();
         void Draw3D();
 
