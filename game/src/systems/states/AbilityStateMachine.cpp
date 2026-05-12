@@ -98,7 +98,7 @@ namespace lq
             }
         }
 
-        void OnEnter(entt::entity abilityEntity) override
+        void OnEnter(entt::entity abilityEntity, const sage::StatePayload&) override
         {
             enableCursor(abilityEntity);
             cursorActive = true;
@@ -134,7 +134,7 @@ namespace lq
       public:
         sage::Event<entt::entity> onExecute;
 
-        void OnEnter(entt::entity abilityEntity) override
+        void OnEnter(entt::entity abilityEntity, const sage::StatePayload&) override
         {
             auto& ab = registry->get<Ability>(abilityEntity);
             ab.cooldownTimer.Start();

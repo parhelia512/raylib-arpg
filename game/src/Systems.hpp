@@ -31,6 +31,7 @@ namespace lq
     class LootSystem;
     class ControllableActorSystem;
     class CursorClickIndicator;
+    class DoorSystem;
 
     class Systems
     {
@@ -40,6 +41,7 @@ namespace lq
 
         std::unique_ptr<SelectionSystem> selectionSystem;
         std::unique_ptr<CursorClickIndicator> cursorClickIndicator;
+        std::unique_ptr<DoorSystem> doorSystem;
         std::unique_ptr<DialogSystem> dialogSystem;
         std::unique_ptr<DialogFactory> dialogFactory;
         std::unique_ptr<NPCManager> npcManager;

@@ -14,7 +14,6 @@
 #include "engine/FullscreenTextOverlayManager.hpp"
 #include "engine/Settings.hpp"
 #include "engine/slib.hpp"
-#include "engine/systems/DoorSystem.hpp"
 #include "engine/systems/RenderSystem.hpp"
 
 #include "components/ContextualDialogTriggerComponent.hpp"
@@ -22,6 +21,7 @@
 #include "components/ItemComponent.hpp"
 #include "ParsingHelpers.hpp"
 #include "Systems.hpp"
+#include "systems/DoorSystem.hpp"
 #include "systems/PartySystem.hpp"
 
 #include "entt/entt.hpp"
@@ -40,7 +40,7 @@ namespace lq::parsing
             assert(!func.params.empty());
             auto doorId = sys->engine.renderSystem->FindRenderable<sage::DoorBehaviorComponent>(func.params);
             assert(doorId != entt::null);
-            event->Subscribe([doorId, sys](Args...) { sys->engine.doorSystem->UnlockAndOpenDoor(doorId); });
+            event->Subscribe([doorId, sys](Args...) { sys->doorSystem->UnlockAndOpenDoor(doorId); });
         }
         else if (func.name.find("JoinParty") != std::string::npos)
         {

@@ -28,7 +28,7 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity entity) override
+        void OnEnter(entt::entity entity, const sage::StatePayload&) override
         {
         }
 
@@ -60,7 +60,7 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity entity) override
+        void OnEnter(entt::entity entity, const sage::StatePayload&) override
         {
             // Create waves here (enemies etc)
             std::cout << "Wave state entered! \n";
@@ -94,7 +94,7 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity entity) override
+        void OnEnter(entt::entity entity, const sage::StatePayload&) override
         {
             // Create waves here (enemies etc)
             std::cout << "Combat state entered! \n";

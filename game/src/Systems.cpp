@@ -22,6 +22,7 @@ namespace lq
         : engine(_registry, _keyMapping, _settings, _audioManager),
           selectionSystem(std::make_unique<SelectionSystem>()),
           cursorClickIndicator(std::make_unique<CursorClickIndicator>(_registry, this)),
+          doorSystem(std::make_unique<DoorSystem>(_registry, &engine)),
           dialogSystem(std::make_unique<DialogSystem>(_registry, this)),
           dialogFactory(std::make_unique<DialogFactory>(_registry, this)),
           npcManager(std::make_unique<NPCManager>(_registry, this)),

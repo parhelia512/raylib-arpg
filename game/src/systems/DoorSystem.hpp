@@ -9,17 +9,21 @@
 namespace sage
 {
     class EngineSystems;
+}
+
+namespace lq
+{
     class DoorSystem
     {
         entt::registry* registry;
-        EngineSystems* sys;
+        sage::EngineSystems* sys;
 
       public:
         void UnlockDoor(entt::entity entity) const;
         void UnlockAndOpenDoor(entt::entity entity);
         void OpenClickedDoor(entt::entity entity) const;
 
-        DoorSystem(entt::registry* _registry, EngineSystems* _sys);
+        DoorSystem(entt::registry* _registry, sage::EngineSystems* _sys);
     };
 
-} // namespace sage
+} // namespace lq

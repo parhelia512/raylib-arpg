@@ -44,7 +44,7 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity entity) override
+        void OnEnter(entt::entity entity, const sage::StatePayload&) override
         {
             auto& animation = registry->get<sage::Animation>(entity);
             animation.ChangeAnimationById(lq::animation_ids::Idle);
@@ -86,7 +86,7 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload&) override
         {
             sys->engine.actorMovementSystem->CancelMovement(self);
             auto& moveable = registry->get<sage::MoveableActor>(self);
@@ -151,7 +151,7 @@ namespace lq
             auto& dialogComponent = registry->get<DialogComponent>(self);
             dialogComponent.dialogTarget = entt::null;
             auto& moveable = registry->get<sage::MoveableActor>(self);
-            moveable.actorTarget.reset();
+            moveable.movementCollisionTarget.reset();
             stateController->ChangeState(self, PlayerStateEnum::Default);
         }
 
@@ -165,12 +165,12 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload&) override
         {
             auto& moveable = registry->get<sage::MoveableActor>(self);
-            assert(moveable.actorTarget.has_value());
             auto& playerDiag = registry->get<DialogComponent>(self);
-            playerDiag.dialogTarget = moveable.actorTarget.value();
+            assert(playerDiag.dialogTarget != entt::null);
+            moveable.movementCollisionTarget = playerDiag.dialogTarget;
             const auto& pos = registry->get<DialogComponent>(playerDiag.dialogTarget).conversationPos;
             sys->engine.actorMovementSystem->PathfindToLocation(self, pos);
 
@@ -188,6 +188,7 @@ namespace lq
 
         void OnExit(entt::entity self) override
         {
+            registry->get<sage::MoveableActor>(self).movementCollisionTarget.reset();
         }
 
         ~MovingToTalkToNPCState() override = default;
@@ -248,7 +249,7 @@ namespace lq
         PlayerStateMachine* stateController;
 
       public:
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload&) override
         {
             auto& playerDiag = registry->get<DialogComponent>(self);
             registry->get<sage::Animation>(self).ChangeAnimationById(lq::animation_ids::Talk);
@@ -296,8 +297,21 @@ namespace lq
 
     class PlayerStateMachine::MovingToLootState : public sage::State
     {
+      public:
+        struct Payload final : sage::StatePayload
+        {
+            entt::entity target = entt::null;
+
+            explicit Payload(const entt::entity _target) : target(_target)
+            {
+            }
+        };
+
+      private:
         Systems* sys;
         PlayerStateMachine* stateController;
+        std::unordered_map<entt::entity, entt::entity> targets;
+
         void onMovementCancelled(const entt::entity self) const
         {
             stateController->ChangeState(self, PlayerStateEnum::Default);
@@ -305,8 +319,7 @@ namespace lq
 
         void onTargetReached(const entt::entity self) const
         {
-            auto& moveable = registry->get<sage::MoveableActor>(self);
-            sys->lootSystem->OnChestClick(moveable.lootTarget.value());
+            sys->lootSystem->OnChestClick(targets.at(self));
             stateController->ChangeState(self, PlayerStateEnum::Default);
         }
 
@@ -315,12 +328,15 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload& payload) override
         {
             auto& moveable = registry->get<sage::MoveableActor>(self);
-            assert(moveable.lootTarget.has_value());
+            const auto& lootPayload = dynamic_cast<const Payload&>(payload);
+            const auto target = lootPayload.target;
+            assert(target != entt::null);
+            targets.insert_or_assign(self, target);
             const auto& trans = registry->get<sage::sgTransform>(self);
-            const auto& chestTrans = registry->get<sage::sgTransform>(moveable.lootTarget.value());
+            const auto& chestTrans = registry->get<sage::sgTransform>(target);
             Vector3 dest = Vector3Add(
                 trans.GetWorldPos(),
                 sage::Vector3MultiplyByValue(
@@ -342,8 +358,7 @@ namespace lq
 
         void OnExit(entt::entity self) override
         {
-            auto& moveable = registry->get<sage::MoveableActor>(self);
-            moveable.lootTarget.reset();
+            targets.erase(self);
         }
 
         ~MovingToLootState() override = default;
@@ -374,7 +389,7 @@ namespace lq
         }
 
       public:
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload&) override
         {
             auto& animation = registry->get<sage::Animation>(self);
             animation.ChangeAnimationById(lq::animation_ids::Run);
@@ -450,7 +465,7 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity entity) override
+        void OnEnter(entt::entity entity, const sage::StatePayload&) override
         {
             auto& animation = registry->get<sage::Animation>(entity);
             animation.ChangeAnimationById(lq::animation_ids::AutoAttack);
@@ -510,18 +525,15 @@ namespace lq
         {
             ChangeState(self, PlayerStateEnum::Default);
         }
-        auto& moveable = registry->get<sage::MoveableActor>(self);
-        moveable.lootTarget = target;
-        ChangeState(self, PlayerStateEnum::MovingToLoot);
-        // ChangeStateExArgs<MovingToLootState, entt::entity>(self, PlayerStateEnum::MovingToLoot, target);
+        const MovingToLootState::Payload payload{target};
+        ChangeState(self, PlayerStateEnum::MovingToLoot, payload);
     }
 
     void PlayerStateMachine::onNPCLeftClick(entt::entity self, entt::entity target)
     {
         if (!registry->any_of<DialogComponent>(target)) return;
 
-        auto& moveable = registry->get<sage::MoveableActor>(self);
-        moveable.actorTarget = target;
+        registry->get<DialogComponent>(self).dialogTarget = target;
         ChangeState(self, PlayerStateEnum::MovingToTalkToNPC);
         //        ChangeStateExArgs<MovingToTalkToNPCState, entt::entity>(self, PlayerStateEnum::MovingToTalkToNPC,
         //        target);

@@ -50,7 +50,7 @@ namespace lq
         {
         }
 
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload&) override
         {
             auto& state = registry->get<WavemobState>(self);
             auto& combatable = registry->get<CombatableActor>(self);
@@ -135,14 +135,14 @@ namespace lq
             }
         }
 
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload&) override
         {
             const auto abilityEntity = sys->abilityFactory->GetAbility(self, AbilityEnum::ENEMY_AUTOATTACK);
             registry->get<Ability>(abilityEntity).cancelCast.Publish(abilityEntity);
 
             auto& moveable = registry->get<sage::MoveableActor>(self);
             const auto& combatable = registry->get<CombatableActor>(self);
-            moveable.actorTarget.emplace(combatable.target);
+            moveable.movementCollisionTarget = combatable.target;
             auto& target = registry->get<sage::MoveableActor>(combatable.target);
 
             auto sub = moveable.onDestinationReached.Subscribe(
@@ -160,7 +160,7 @@ namespace lq
         void OnExit(entt::entity self) override
         {
             auto& moveable = registry->get<sage::MoveableActor>(self);
-            moveable.actorTarget.reset();
+            moveable.movementCollisionTarget.reset();
         }
 
         ~TargetOutOfRangeState() override = default;
@@ -210,7 +210,7 @@ namespace lq
             }
         }
 
-        void OnEnter(entt::entity entity) override
+        void OnEnter(entt::entity entity, const sage::StatePayload&) override
         {
             auto abilityEntity = sys->abilityFactory->GetAbility(entity, AbilityEnum::ENEMY_AUTOATTACK);
             registry->get<Ability>(abilityEntity).startCast.Publish(abilityEntity);
@@ -245,7 +245,7 @@ namespace lq
         }
 
       public:
-        void OnEnter(entt::entity self) override
+        void OnEnter(entt::entity self, const sage::StatePayload&) override
         {
             LockState(self); // Target is dying, do not change state
             auto& combatable = registry->get<CombatableActor>(self);
