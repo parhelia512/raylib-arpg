@@ -21,14 +21,14 @@ static constexpr int FOLLOW_DISTANCE = 15;
 
 namespace lq
 {
-    // Necessary data for when the following party member cannot reach their target destination
-    struct DestinationUnreachableData
+    struct PartyDestinationUnreachablePayload final : sage::StatePayload
     {
         Vector3 originalDestination{};
-        double timeStart{};
-        unsigned int tryCount = 0;
-        const float retryTimeThreshold = 1.5;
-        const unsigned int maxTries = 10;
+
+        explicit PartyDestinationUnreachablePayload(const Vector3 _originalDestination)
+            : originalDestination(_originalDestination)
+        {
+        }
     };
 
     class PartyMemberStateMachine::DefaultState final : public sage::State
@@ -78,10 +78,8 @@ namespace lq
 
         void onDestinationUnreachable(const entt::entity self, const Vector3 requestedPos) const
         {
-            auto& moveable = registry->get<sage::MoveableActor>(self);
-            registry->emplace<DestinationUnreachableData>(
-                self, DestinationUnreachableData{.originalDestination = requestedPos, .timeStart = GetTime()});
-            stateController->ChangeState(self, PartyMemberStateEnum::DestinationUnreachable);
+            const PartyDestinationUnreachablePayload payload{requestedPos};
+            stateController->ChangeState(self, PartyMemberStateEnum::DestinationUnreachable, payload);
         }
 
         void onMovementCancelled(const entt::entity self) const
@@ -253,17 +251,27 @@ namespace lq
 
     class PartyMemberStateMachine::DestinationUnreachableState final : public sage::State
     {
+        struct StateData
+        {
+            Vector3 originalDestination{};
+            double timeStart{};
+            unsigned int tryCount = 0;
+            float retryTimeThreshold = 1.5f;
+            unsigned int maxTries = 10;
+        };
+
         Systems* sys;
         PartyMemberStateMachine* stateController;
+        std::unordered_map<entt::entity, StateData> data;
 
       public:
         void Update(entt::entity self) override
         {
             auto& moveable = registry->get<sage::MoveableActor>(self);
             if (moveable.IsMoving()) return;
-            auto& data = registry->get<DestinationUnreachableData>(self);
+            auto& retryData = data.at(self);
 
-            if (data.tryCount >= data.maxTries)
+            if (retryData.tryCount >= retryData.maxTries)
             {
                 // Give up trying.
                 moveable.movementCollisionTarget.reset();
@@ -272,11 +280,12 @@ namespace lq
                 return;
             }
 
-            if (GetTime() >= data.timeStart + data.retryTimeThreshold)
+            if (GetTime() >= retryData.timeStart + retryData.retryTimeThreshold)
             {
-                ++data.tryCount;
-                data.timeStart = GetTime();
-                if (sys->engine.actorMovementSystem->TryPathfindToLocation(self, data.originalDestination, true))
+                ++retryData.tryCount;
+                retryData.timeStart = GetTime();
+                if (sys->engine.actorMovementSystem->TryPathfindToLocation(
+                        self, retryData.originalDestination, true))
                 {
                     stateController->ChangeState(self, PartyMemberStateEnum::FollowingLeader);
                 }
@@ -290,22 +299,24 @@ namespace lq
                     auto leaderPos = registry->get<sage::sgTransform>(target.value()).GetWorldPos();
                     if (sys->engine.actorMovementSystem->TryPathfindToLocation(self, leaderPos, true))
                     {
-                        data.tryCount = 0;
+                        retryData.tryCount = 0;
                     }
                 }
             }
         }
 
-        void OnEnter(const entt::entity self, const sage::StatePayload&) override
+        void OnEnter(const entt::entity self, const sage::StatePayload& payload) override
         {
-            assert(registry->any_of<DestinationUnreachableData>(self));
+            const auto& unreachablePayload = dynamic_cast<const PartyDestinationUnreachablePayload&>(payload);
+            data.insert_or_assign(
+                self, StateData{.originalDestination = unreachablePayload.originalDestination, .timeStart = GetTime()});
             auto& animation{registry->get<sage::Animation>(self)};
             animation.ChangeAnimationById(lq::animation_ids::Idle);
         }
 
         void OnExit(const entt::entity self) override
         {
-            registry->remove<DestinationUnreachableData>(self);
+            data.erase(self);
         }
 
         ~DestinationUnreachableState() override = default;

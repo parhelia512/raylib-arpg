@@ -202,7 +202,6 @@ namespace lq
 
     struct DialogComponent
     {
-        entt::entity dialogTarget;        // Who are you talking with
         Vector3 conversationPos;          // Where the other person stands
         std::optional<Vector3> cameraPos; // The *local* camera position during the conversation (does not
                                           // reposition camera if not set)

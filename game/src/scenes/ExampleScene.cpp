@@ -38,13 +38,12 @@ namespace lq
         const auto conversationEntity = sys->engine.renderSystem->FindRenderableByName("Opening_Dialog");
         assert(conversationEntity != entt::null);
 
-        sys->engine.fullscreenTextOverlayFactory->onOverlayEnding.Subscribe([actor, this]() {
-            sys->stateMachines->playerStateMachine->ChangeState(actor, PlayerStateEnum::InDialog);
+        sys->engine.fullscreenTextOverlayFactory->onOverlayEnding.Subscribe([actor, conversationEntity, this]() {
+            const DialogTargetPayload payload{conversationEntity};
+            sys->stateMachines->playerStateMachine->ChangeState(actor, PlayerStateEnum::InDialog, payload);
             auto& animationComponent = registry->get<sage::Animation>(actor);
             animationComponent.ChangeAnimationById(lq::animation_ids::Idle2);
         });
-        auto& dialogComponent = registry->get<DialogComponent>(actor);
-        dialogComponent.dialogTarget = conversationEntity;
 
         auto& conversationComponent = registry->get<DialogComponent>(conversationEntity);
         conversationComponent.conversation->onConversationEnd.Subscribe([this]() {

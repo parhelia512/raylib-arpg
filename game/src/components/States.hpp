@@ -32,7 +32,6 @@ namespace lq
         MovingToTalkToNPC,
         MovingToLoot,
         InDialog,
-        DestinationUnreachable,
         Combat
     };
 

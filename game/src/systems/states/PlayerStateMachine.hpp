@@ -9,6 +9,15 @@ namespace lq
 {
     class Systems;
 
+    struct DialogTargetPayload final : sage::StatePayload
+    {
+        entt::entity target = entt::null;
+
+        explicit DialogTargetPayload(const entt::entity _target) : target(_target)
+        {
+        }
+    };
+
     class PlayerStateMachine final : public sage::StateMachine<PlayerState, PlayerStateEnum>
     {
         class DefaultState;
@@ -18,7 +27,6 @@ namespace lq
         class MovingToLootState;
         class InDialogState;
         class CombatState;
-        class DestinationUnreachableState;
 
         void onComponentAdded(entt::entity entity);
         void onComponentRemoved(entt::entity entity);
