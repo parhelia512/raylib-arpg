@@ -11,7 +11,6 @@
 #include "abilities/vfx/VisualFX.hpp"
 #include "abilities/vfx/WhirlwindVFX.hpp"
 #include "components/Ability.hpp"
-#include "engine/components/BaseStateComponent.hpp"
 #include "engine/components/sgTransform.hpp"
 #include "engine/Cursor.hpp"
 #include "engine/Serializer.hpp"

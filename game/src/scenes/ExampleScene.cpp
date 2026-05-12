@@ -14,6 +14,7 @@
 
 #include "engine/AudioManager.hpp"
 #include "engine/Camera.hpp"
+#include "engine/components/Animation.hpp"
 #include "engine/FullscreenTextOverlayManager.hpp"
 #include "engine/systems/RenderSystem.hpp"
 

@@ -10,7 +10,6 @@
 #include "PartySystem.hpp"
 #include "Systems.hpp"
 
-#include "engine/components/BaseStateComponent.hpp"
 #include "engine/components/Collideable.hpp"
 #include "engine/components/sgTransform.hpp"
 #include "engine/Cursor.hpp"

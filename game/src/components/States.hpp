@@ -3,10 +3,10 @@
 //
 
 #pragma once
-#include "engine/components/BaseStateComponent.hpp"
 #include "engine/Event.hpp"
 
 #include "entt/entt.hpp"
+#include "raylib.h"
 
 #include <variant>
 #include <vector>
@@ -256,22 +256,53 @@ namespace lq
     };
 
     // =================================================================================
-    // Ability (still enum-based via BaseStateComponent)
+    // Ability
     // =================================================================================
 
-    enum class AbilityStateEnum
+    struct AbilityIdleState
     {
-        IDLE,
-        CURSOR_SELECT,
-        AWAITING_EXECUTION
     };
 
-    class AbilityState : public sage::BaseStateComponent<AbilityState, AbilityStateEnum>
+    struct AbilityCursorSelectState
     {
-      public:
-        AbilityState() : BaseStateComponent(AbilityStateEnum::IDLE)
+    };
+
+    struct AbilityAwaitingExecutionState
+    {
+    };
+
+    struct AbilityState
+    {
+        using Variant =
+            std::variant<AbilityIdleState, AbilityCursorSelectState, AbilityAwaitingExecutionState>;
+
+        Variant current = AbilityIdleState{};
+        std::vector<sage::Subscription> subscriptions;
+
+        void BindSubscription(sage::Subscription newSubscription)
         {
+            subscriptions.push_back(std::move(newSubscription));
         }
+
+        void RemoveAllSubscriptions()
+        {
+            for (auto& subscription : subscriptions)
+            {
+                subscription.UnSubscribe();
+            }
+            subscriptions.clear();
+        }
+
+        ~AbilityState()
+        {
+            RemoveAllSubscriptions();
+        }
+
+        AbilityState() = default;
+        AbilityState(AbilityState&& other) noexcept = default;
+        AbilityState& operator=(AbilityState&& other) noexcept = default;
+        AbilityState(const AbilityState&) = delete;
+        AbilityState& operator=(const AbilityState&) = delete;
     };
 
 } // namespace lq

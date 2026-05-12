@@ -1,43 +1,65 @@
 #pragma once
 
-#include "components/Ability.hpp"
 #include "components/States.hpp"
-#include "engine/systems/states/StateMachine.hpp"
+#include "engine/systems/states/StateMachineBase.hpp"
 
 #include "entt/entt.hpp"
 
 namespace lq
 {
     class Systems;
-    class VisualFX;
 
-    class AbilityStateMachine : sage::StateMachine<AbilityState, AbilityStateEnum>
+    class AbilityStateMachine final : public sage::StateMachineBase<AbilityStateMachine, AbilityState>
     {
-        class IdleState;
-        class AwaitingExecutionState;
-        class CursorSelectState;
+        using Base = sage::StateMachineBase<AbilityStateMachine, AbilityState>;
+        friend Base;
 
         Systems* sys;
 
-        void executeAbility(entt::entity abilityEntity);
-        bool checkRange(entt::entity abilityEntity) const;
-        void spawnAbility(entt::entity abilityEntity);
-        void cancelCast(entt::entity abilityEntity);
-        void startCast(entt::entity abilityEntity);
+        // ===== Idle =====
+        void onEnter(AbilityIdleState&, entt::entity)
+        {
+        }
+        void onExit(AbilityIdleState&, entt::entity)
+        {
+        }
+        void update(AbilityIdleState&, entt::entity entity);
 
-        void onComponentAdded(entt::entity addedEntity);
-        void onComponentRemoved(entt::entity addedEntity) const;
+        // ===== CursorSelect =====
+        void onEnter(AbilityCursorSelectState&, entt::entity entity);
+        void onExit(AbilityCursorSelectState&, entt::entity entity);
+        void update(AbilityCursorSelectState&, entt::entity entity);
+
+        // ===== AwaitingExecution =====
+        // TODO: I think this should be split into two states depending on whether its detached or not
+        // Or maybe if it has a cast time or not...
+        void onEnter(AbilityAwaitingExecutionState&, entt::entity entity);
+        void onExit(AbilityAwaitingExecutionState&, entt::entity)
+        {
+        }
+        void update(AbilityAwaitingExecutionState&, entt::entity entity);
+
+        void enableCursor(entt::entity entity);
+        void disableCursor(entt::entity entity);
+
+        void startCast(entt::entity entity);
+        void cancelCast(entt::entity entity);
+        void spawnAbility(entt::entity entity);
+        void executeAbility(entt::entity entity);
+        [[nodiscard]] bool checkRange(entt::entity entity) const;
+
+        void onComponentAdded(entt::entity entity);
+        void onComponentRemoved(entt::entity) const
+        {
+        }
 
       public:
-        void Update() const;
+        void Update();
         void Draw3D();
 
-        ~AbilityStateMachine() override = default;
+        ~AbilityStateMachine() = default;
         AbilityStateMachine(const AbilityStateMachine&) = delete;
         AbilityStateMachine& operator=(const AbilityStateMachine&) = delete;
         AbilityStateMachine(entt::registry* _registry, Systems* _sys);
-
-        friend class StateMachine; // Required for CRTP
     };
-
 } // namespace lq

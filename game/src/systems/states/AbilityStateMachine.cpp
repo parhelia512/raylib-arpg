@@ -5,6 +5,7 @@
 #include "abilities/AbilityIndicator.hpp"
 #include "abilities/vfx/VisualFX.hpp"
 #include "AbilityFactory.hpp"
+#include "components/Ability.hpp"
 #include "components/CombatableActor.hpp"
 #include "engine/Timer.hpp"
 #include "GameObjectFactory.hpp"
@@ -15,9 +16,9 @@
 #include "engine/components/MoveableActor.hpp"
 #include "engine/components/sgTransform.hpp"
 #include "engine/Cursor.hpp"
+#include "engine/systems/TransformSystem.hpp"
 #include "engine/TextureTerrainOverlay.hpp"
 
-#include "engine/systems/TransformSystem.hpp"
 #include "raylib.h"
 
 #include <cassert>
@@ -25,229 +26,168 @@
 
 namespace lq
 {
-    class AbilityStateMachine::IdleState : public sage::State
+    // ====== AbilityIdleState ========================================================
+
+    void AbilityStateMachine::update(AbilityIdleState&, const entt::entity entity)
     {
-
-      public:
-        sage::Event<entt::entity> onRestartTriggered;
-
-        void Update(entt::entity abilityEntity) override
+        auto& ab = registry->get<Ability>(entity);
+        const auto& ad = registry->get<AbilityData>(entity);
+        ab.cooldownTimer.Update(GetFrameTime());
+        if (ab.cooldownTimer.HasFinished() &&
+            ad.base.HasOptionalBehaviour(AbilityBehaviourOptional::REPEAT_AUTO))
         {
-            auto& ab = registry->get<Ability>(abilityEntity);
-            const auto& ad = registry->get<AbilityData>(abilityEntity);
-            ab.cooldownTimer.Update(GetFrameTime());
-            if (ab.cooldownTimer.HasFinished() &&
-                ad.base.HasOptionalBehaviour(AbilityBehaviourOptional::REPEAT_AUTO))
-            {
-                onRestartTriggered.Publish(abilityEntity);
-            }
+            startCast(entity);
         }
+    }
 
-        IdleState(entt::registry* _registry) : State(_registry)
-        {
-        }
-    };
+    // ====== AbilityCursorSelectState ================================================
 
-    // --------------------------------------------
-
-    class AbilityStateMachine::CursorSelectState : public sage::State
+    void AbilityStateMachine::onEnter(AbilityCursorSelectState&, const entt::entity entity)
     {
-        Systems* sys;
-        bool cursorActive = false; // Limits us to one cursor at once (I assume this is fine)
+        enableCursor(entity);
+    }
 
-        void enableCursor(entt::entity abilityEntity)
-        {
-            auto& ab = registry->get<Ability>(abilityEntity);
-            ab.abilityIndicator->Init(sys->engine.cursor->getFirstNaviCollision().point);
-            ab.abilityIndicator->Enable(true);
-            sys->engine.cursor->Disable();
-            sys->engine.cursor->Hide();
-        }
-
-        void disableCursor(entt::entity abilityEntity)
-        {
-            auto& ab = registry->get<Ability>(abilityEntity);
-            sys->engine.cursor->Enable();
-            sys->engine.cursor->Show();
-            ab.abilityIndicator->Enable(false);
-        }
-
-        void toggleCursor(entt::entity abilityEntity)
-        {
-            if (cursorActive)
-            {
-                disableCursor(abilityEntity);
-                cursorActive = false;
-            }
-            else
-            {
-                enableCursor(abilityEntity);
-                cursorActive = true;
-            }
-        }
-
-      public:
-        sage::Event<entt::entity> onConfirm;
-        void Update(entt::entity abilityEntity) override
-        {
-            auto& ab = registry->get<Ability>(abilityEntity);
-            ab.abilityIndicator->Update(sys->engine.cursor->getFirstNaviCollision().point);
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-            {
-                onConfirm.Publish(abilityEntity);
-            }
-        }
-
-        void OnEnter(entt::entity abilityEntity, const sage::StatePayload&) override
-        {
-            enableCursor(abilityEntity);
-            cursorActive = true;
-        }
-
-        void OnExit(entt::entity abilityEntity) override
-        {
-            if (cursorActive)
-            {
-                disableCursor(abilityEntity);
-                cursorActive = false;
-            }
-        }
-
-        CursorSelectState(entt::registry* _registry, Systems* _sys) : State(_registry), sys(_sys)
-        {
-        }
-    };
-
-    // --------------------------------------------
-
-    // TODO: I think this should be split into two states depending on whether its detached or not
-    // Or maybe if it has a cast time or not...
-    class AbilityStateMachine::AwaitingExecutionState : public sage::State
+    void AbilityStateMachine::onExit(AbilityCursorSelectState&, const entt::entity entity)
     {
-        Systems* sys;
+        disableCursor(entity);
+    }
 
-        void signalExecute(entt::entity abilityEntity) const
-        {
-            onExecute.Publish(abilityEntity);
-        }
-
-      public:
-        sage::Event<entt::entity> onExecute;
-
-        void OnEnter(entt::entity abilityEntity, const sage::StatePayload&) override
-        {
-            auto& ab = registry->get<Ability>(abilityEntity);
-            ab.cooldownTimer.Start();
-            ab.castTimer.Start();
-
-            const auto& ad = registry->get<AbilityData>(abilityEntity);
-            if (ad.base.HasBehaviour(AbilityBehaviour::MOVEMENT_PROJECTILE))
-            {
-                createProjectile(registry, ab.caster, abilityEntity, sys);
-                auto& moveable = registry->get<sage::MoveableActor>(abilityEntity);
-                moveable.onDestinationReached.Subscribe([this](entt::entity _entity) { signalExecute(_entity); });
-            }
-        }
-
-        void Update(entt::entity abilityEntity) override
-        {
-            auto& ab = registry->get<Ability>(abilityEntity);
-            ab.castTimer.Update(GetFrameTime());
-            const auto& ad = registry->get<AbilityData>(abilityEntity);
-
-            // "executionDelayTimer" should just be a cast timer. Therefore, below should check for cast time
-            // behaviour
-            if (ab.castTimer.HasFinished() &&
-                !ad.base.HasBehaviour(AbilityBehaviour::CAST_REGULAR)) // Might be FOLLOW_NONE
-            {
-                onExecute.Publish(abilityEntity);
-            }
-        }
-
-        AwaitingExecutionState(entt::registry* _registry, Systems* _sys) : State(_registry), sys(_sys)
-        {
-        }
-    };
-
-    // ----------------------------
-
-    void AbilityStateMachine::cancelCast(entt::entity abilityEntity)
+    void AbilityStateMachine::update(AbilityCursorSelectState&, const entt::entity entity)
     {
-        auto& ab = registry->get<Ability>(abilityEntity);
-        auto* vfx = ab.GetVfx(registry);
-        if (vfx && vfx->active)
+        auto& ab = registry->get<Ability>(entity);
+        ab.abilityIndicator->Update(sys->engine.cursor->getFirstNaviCollision().point);
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+        {
+            spawnAbility(entity);
+        }
+    }
+
+    void AbilityStateMachine::enableCursor(const entt::entity entity)
+    {
+        auto& ab = registry->get<Ability>(entity);
+        ab.abilityIndicator->Init(sys->engine.cursor->getFirstNaviCollision().point);
+        ab.abilityIndicator->Enable(true);
+        sys->engine.cursor->Disable();
+        sys->engine.cursor->Hide();
+    }
+
+    void AbilityStateMachine::disableCursor(const entt::entity entity)
+    {
+        auto& ab = registry->get<Ability>(entity);
+        sys->engine.cursor->Enable();
+        sys->engine.cursor->Show();
+        ab.abilityIndicator->Enable(false);
+    }
+
+    // ====== AbilityAwaitingExecutionState ===========================================
+
+    void AbilityStateMachine::onEnter(AbilityAwaitingExecutionState&, const entt::entity entity)
+    {
+        auto& ab = registry->get<Ability>(entity);
+        ab.cooldownTimer.Start();
+        ab.castTimer.Start();
+
+        const auto& ad = registry->get<AbilityData>(entity);
+        if (ad.base.HasBehaviour(AbilityBehaviour::MOVEMENT_PROJECTILE))
+        {
+            createProjectile(registry, ab.caster, entity, sys);
+            auto& moveable = registry->get<sage::MoveableActor>(entity);
+            auto& state = registry->get<AbilityState>(entity);
+            state.BindSubscription(moveable.onDestinationReached.Subscribe(
+                [this](const entt::entity e) { executeAbility(e); }));
+        }
+    }
+
+    void AbilityStateMachine::update(AbilityAwaitingExecutionState&, const entt::entity entity)
+    {
+        auto& ab = registry->get<Ability>(entity);
+        ab.castTimer.Update(GetFrameTime());
+        const auto& ad = registry->get<AbilityData>(entity);
+
+        // "executionDelayTimer" should just be a cast timer. Therefore, below should check for cast time
+        // behaviour
+        if (ab.castTimer.HasFinished() && !ad.base.HasBehaviour(AbilityBehaviour::CAST_REGULAR))
+        {
+            executeAbility(entity);
+        }
+    }
+
+    // ====== Cross-state transitions =================================================
+
+    void AbilityStateMachine::cancelCast(const entt::entity entity)
+    {
+        auto& ab = registry->get<Ability>(entity);
+        if (auto* vfx = ab.GetVfx(registry); vfx && vfx->active)
         {
             vfx->active = false;
         }
         ab.cooldownTimer.Stop();
         ab.castTimer.Stop();
-        ChangeState(abilityEntity, AbilityStateEnum::IDLE);
+        ChangeState(entity, AbilityIdleState{});
     }
 
-    void AbilityStateMachine::executeAbility(entt::entity abilityEntity)
+    void AbilityStateMachine::executeAbility(const entt::entity entity)
     {
-        auto& ab = registry->get<Ability>(abilityEntity);
-        const auto& ad = registry->get<AbilityData>(abilityEntity);
+        const auto& ab = registry->get<Ability>(entity);
+        const auto& ad = registry->get<AbilityData>(entity);
 
         if (ad.base.HasBehaviour(AbilityBehaviour::ATTACK_TARGET))
         {
-            auto target = registry->get<CombatableActor>(ab.caster).target;
-            HitSingleTarget(registry, sys->Engine(), ab.caster, abilityEntity, target);
+            const auto target = registry->get<CombatableActor>(ab.caster).target;
+            HitSingleTarget(registry, sys->Engine(), ab.caster, entity, target);
         }
         else if (ad.base.HasBehaviour(AbilityBehaviour::ATTACK_AOE_POINT))
         {
             Vector3 targetPos{};
-
             if (ad.base.HasBehaviour(AbilityBehaviour::FOLLOW_NONE))
             {
-                targetPos = registry->get<sage::sgTransform>(abilityEntity).GetWorldPos();
+                targetPos = registry->get<sage::sgTransform>(entity).GetWorldPos();
             }
             else if (ad.base.HasBehaviour(AbilityBehaviour::FOLLOW_CASTER))
             {
                 targetPos = registry->get<sage::sgTransform>(ab.caster).GetWorldPos();
             }
-            AOEAtPoint(registry, ab.caster, abilityEntity, targetPos, ad.base.radius);
+            AOEAtPoint(registry, ab.caster, entity, targetPos, ad.base.radius);
         }
 
-        ChangeState(abilityEntity, AbilityStateEnum::IDLE);
+        ChangeState(entity, AbilityIdleState{});
     }
 
-    bool AbilityStateMachine::checkRange(const entt::entity abilityEntity) const
+    bool AbilityStateMachine::checkRange(const entt::entity entity) const
     {
         // TODO: Should account for more possibilities with flags here.
-        const auto& ab = registry->get<Ability>(abilityEntity);
-        const auto& ad = registry->get<AbilityData>(abilityEntity);
+        const auto& ab = registry->get<Ability>(entity);
+        const auto& ad = registry->get<AbilityData>(entity);
         if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CURSOR))
         {
-            auto& casterPos = registry->get<sage::sgTransform>(ab.caster).GetWorldPos();
+            const auto& casterPos = registry->get<sage::sgTransform>(ab.caster).GetWorldPos();
             if (const auto point = sys->engine.cursor->getFirstNaviCollision().point;
                 Vector3Distance(point, casterPos) > ad.base.range)
             {
                 std::cout << "Out of range. \n";
-                ab.castFailed.Publish(abilityEntity, AbilityCastFail::OUT_OF_RANGE);
+                ab.castFailed.Publish(entity, AbilityCastFail::OUT_OF_RANGE);
                 return false;
             }
         }
         return true;
     }
 
-    void AbilityStateMachine::spawnAbility(const entt::entity abilityEntity)
+    void AbilityStateMachine::spawnAbility(const entt::entity entity)
     {
-        const auto& ab{registry->get<Ability>(abilityEntity)};
-        const auto& ad = registry->get<AbilityData>(abilityEntity);
+        const auto& ab = registry->get<Ability>(entity);
+        const auto& ad = registry->get<AbilityData>(entity);
 
-        if (!checkRange(abilityEntity)) return;
+        if (!checkRange(entity)) return;
 
-        auto& animation{registry->get<sage::Animation>(ab.caster)};
+        auto& animation = registry->get<sage::Animation>(ab.caster);
         animation.ChangeAnimationByParams(ad.animationParams);
-        auto* vfx = ab.GetVfx(registry);
-        if (vfx)
+        if (auto* vfx = ab.GetVfx(registry))
         {
-            const auto& trans{registry->get<sage::sgTransform>(abilityEntity)};
+            const auto& trans = registry->get<sage::sgTransform>(entity);
             if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CASTER))
             {
-                auto& casterTrans{registry->get<sage::sgTransform>(ab.caster)};
-                auto& [min, max]{registry->get<sage::Collideable>(ab.caster).worldBoundingBox};
+                const auto& casterTrans = registry->get<sage::sgTransform>(ab.caster);
+                const auto& [min, max] = registry->get<sage::Collideable>(ab.caster).worldBoundingBox;
                 const float heightOffset = Vector3Subtract(max, min).y;
 
                 if (ad.base.HasBehaviour(AbilityBehaviour::FOLLOW_CASTER))
@@ -256,69 +196,67 @@ namespace lq
                     // Then we can just say "if ability doesn't follow caster, then set its position"
                     if (trans.GetParent() != ab.caster)
                     {
-                        sys->engine.transformSystem->SetParent(abilityEntity, ab.caster);
-                        sys->engine.transformSystem->SetLocalPos(abilityEntity, {0, heightOffset, 0});
-                        sys->engine.transformSystem->SetLocalRot(abilityEntity, Vector3Zero());
+                        sys->engine.transformSystem->SetParent(entity, ab.caster);
+                        sys->engine.transformSystem->SetLocalPos(entity, {0, heightOffset, 0});
+                        sys->engine.transformSystem->SetLocalRot(entity, Vector3Zero());
                     }
                 }
                 else
                 {
-                    Vector3 pos{casterTrans.GetWorldPos().x, heightOffset, casterTrans.GetWorldPos().z};
-                    sys->engine.transformSystem->SetPosition(abilityEntity, pos);
-                    sys->engine.transformSystem->SetRotation(abilityEntity, casterTrans.GetWorldRot());
+                    const Vector3 pos{casterTrans.GetWorldPos().x, heightOffset, casterTrans.GetWorldPos().z};
+                    sys->engine.transformSystem->SetPosition(entity, pos);
+                    sys->engine.transformSystem->SetRotation(entity, casterTrans.GetWorldRot());
                 }
 
                 vfx->InitSystem();
             }
             else if (ad.base.HasBehaviour(AbilityBehaviour::SPAWN_AT_CURSOR))
             {
-                sys->engine.transformSystem->SetPosition(abilityEntity, sys->engine.cursor->getFirstNaviCollision().point);
+                sys->engine.transformSystem->SetPosition(
+                    entity, sys->engine.cursor->getFirstNaviCollision().point);
                 vfx->InitSystem();
             }
         }
 
-        ChangeState(abilityEntity, AbilityStateEnum::AWAITING_EXECUTION);
+        ChangeState(entity, AbilityAwaitingExecutionState{});
     }
 
     // Determines if we need to display an indicator or not
-    void AbilityStateMachine::startCast(entt::entity abilityEntity)
+    void AbilityStateMachine::startCast(const entt::entity entity)
     {
-
-        auto& ab{registry->get<Ability>(abilityEntity)};
-        const auto& ad = registry->get<AbilityData>(abilityEntity);
+        const auto& ad = registry->get<AbilityData>(entity);
         if (ad.base.HasOptionalBehaviour(AbilityBehaviourOptional::INDICATOR))
         {
-            auto state{registry->get<AbilityState>(abilityEntity).GetCurrentStateEnum()};
-            if (state == AbilityStateEnum::CURSOR_SELECT)
+            auto& state = registry->get<AbilityState>(entity);
+            if (std::holds_alternative<AbilityCursorSelectState>(state.current))
             {
-                ChangeState(abilityEntity, AbilityStateEnum::IDLE);
+                ChangeState(entity, AbilityIdleState{});
             }
             else
             {
-                ChangeState(abilityEntity, AbilityStateEnum::CURSOR_SELECT);
+                ChangeState(entity, AbilityCursorSelectState{});
             }
+            return;
         }
-        else
-        {
-            spawnAbility(abilityEntity);
-        }
+        spawnAbility(entity);
     }
 
-    void AbilityStateMachine::Update() const
-    {
-        auto view = registry->view<AbilityState, Ability>();
-        for (auto abilityEntity : view)
-        {
-            auto& ab{registry->get<Ability>(abilityEntity)};
-            auto state{registry->get<AbilityState>(abilityEntity).GetCurrentStateEnum()};
-            if (!(ab.IsActive() || state == AbilityStateEnum::CURSOR_SELECT))
-            {
-                continue;
-            }
+    // ====== Lifecycle ===============================================================
 
-            states.at(state)->Update(abilityEntity);
-            auto* vfx = ab.GetVfx(registry);
-            if (vfx && vfx->active)
+    void AbilityStateMachine::Update()
+    {
+        for (const auto view = registry->view<AbilityState, Ability>(); const auto entity : view)
+        {
+            auto& state = registry->get<AbilityState>(entity);
+            auto& ab = registry->get<Ability>(entity);
+
+            // Skip idle, inactive abilities; cursor-select always needs ticking for input.
+            const bool inCursorSelect = std::holds_alternative<AbilityCursorSelectState>(state.current);
+            if (!ab.IsActive() && !inCursorSelect) continue;
+
+            std::visit([this, entity](auto& cur) { update(cur, entity); }, state.current);
+
+            if (auto* vfx = ab.GetVfx(registry); vfx && vfx->active)
             {
                 vfx->Update(GetFrameTime());
             }
@@ -327,58 +265,37 @@ namespace lq
 
     void AbilityStateMachine::Draw3D()
     {
-        auto view = registry->view<AbilityState, Ability>();
-        for (auto abilityEntity : view)
+        for (const auto view = registry->view<AbilityState, Ability>(); const auto entity : view)
         {
-            auto& ab = registry->get<Ability>(abilityEntity);
-            auto state = registry->get<AbilityState>(abilityEntity).GetCurrentStateEnum();
-            if (!(ab.IsActive() || state == AbilityStateEnum::CURSOR_SELECT))
-            {
-                continue;
-            }
-            states.at(state)->Draw3D(abilityEntity);
-            auto* vfx = ab.GetVfx(registry);
-            if (vfx && vfx->active)
+            const auto& state = registry->get<AbilityState>(entity);
+            auto& ab = registry->get<Ability>(entity);
+
+            const bool inCursorSelect = std::holds_alternative<AbilityCursorSelectState>(state.current);
+            if (!ab.IsActive() && !inCursorSelect) continue;
+
+            if (auto* vfx = ab.GetVfx(registry); vfx && vfx->active)
             {
                 vfx->Draw3D();
             }
         }
     }
 
-    void AbilityStateMachine::onComponentAdded(entt::entity addedEntity)
+    void AbilityStateMachine::onComponentAdded(const entt::entity entity)
     {
-        auto& ability = registry->get<Ability>(addedEntity);
-        ability.onStartCastSub = ability.startCast.Subscribe([this](entt::entity _entity) { startCast(_entity); });
+        auto& ab = registry->get<Ability>(entity);
+        // Persistent subscriptions — survive state transitions, freed implicitly when the
+        // Ability component (or the entity) is destroyed.
+        ab.startCast.Subscribe([this](const entt::entity e) { startCast(e); });
+        ab.cancelCast.Subscribe([this](const entt::entity e) { cancelCast(e); });
 
-        ability.onCancelCastSub =
-            ability.cancelCast.Subscribe([this](entt::entity _entity) { cancelCast(_entity); });
-    }
-
-    void AbilityStateMachine::onComponentRemoved(entt::entity addedEntity) const
-    {
-        // TODO: Could add the check for "FOLLOW_CASTER" here instead.
-        auto& ability = registry->get<Ability>(addedEntity);
-        ability.onStartCastSub.UnSubscribe();
-        ability.onStartCastSub.UnSubscribe();
+        auto& state = registry->get<AbilityState>(entity);
+        std::visit([this, entity](auto& cur) { onEnter(cur, entity); }, state.current);
     }
 
     AbilityStateMachine::AbilityStateMachine(entt::registry* _registry, Systems* _sys)
-        : StateMachine(_registry), sys(_sys)
+        : Base(_registry), sys(_sys)
     {
         registry->on_construct<Ability>().connect<&AbilityStateMachine::onComponentAdded>(this);
         registry->on_destroy<Ability>().connect<&AbilityStateMachine::onComponentRemoved>(this);
-
-        auto idleState = std::make_unique<IdleState>(_registry);
-        idleState->onRestartTriggered.Subscribe([this](entt::entity _entity) { startCast(_entity); });
-        states[AbilityStateEnum::IDLE] = std::move(idleState);
-
-        auto awaitingExecutionState = std::make_unique<AwaitingExecutionState>(_registry, _sys);
-        awaitingExecutionState->onExecute.Subscribe([this](entt::entity _entity) { executeAbility(_entity); });
-        states[AbilityStateEnum::AWAITING_EXECUTION] = std::move(awaitingExecutionState);
-
-        auto cursorState = std::make_unique<CursorSelectState>(_registry, _sys);
-        cursorState->onConfirm.Subscribe([this](entt::entity _entity) { spawnAbility(_entity); });
-        states[AbilityStateEnum::CURSOR_SELECT] = std::move(cursorState);
     }
-
 } // namespace lq

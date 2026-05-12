@@ -6,8 +6,6 @@
 
 #include "entt/entt.hpp"
 
-#include <unordered_map>
-
 namespace lq
 {
     class VisualFX;
@@ -18,10 +16,6 @@ namespace lq
         entt::entity caster{};
         Timer cooldownTimer;
         Timer castTimer;
-
-        // TODO: Feels strange to have subscriptions and events in the same struct?
-        sage::Subscription onStartCastSub{};
-        sage::Subscription onCancelCastSub{};
 
         AssetID icon{};
         std::string iconPath; // Use AssetID where possible
