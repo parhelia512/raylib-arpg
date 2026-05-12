@@ -29,8 +29,7 @@ namespace lq
         Default,
         MovingToLocation,
         MovingToAttackEnemy,
-        MovingToTalkToNPC,
-        MovingToLoot,
+        MovingToInteractionTarget,
         InDialog,
         Combat
     };

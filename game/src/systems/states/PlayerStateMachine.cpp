@@ -141,11 +141,17 @@ namespace lq
 
     // ----------------------------
 
-    class PlayerStateMachine::MovingToTalkToNPCState final : public sage::State
+    class PlayerStateMachine::MovingToInteractionTargetState final : public sage::State
     {
+        struct StateData
+        {
+            PlayerInteractionKind kind{};
+            entt::entity target = entt::null;
+        };
+
         Systems* sys;
         PlayerStateMachine* stateController;
-        std::unordered_map<entt::entity, entt::entity> targets;
+        std::unordered_map<entt::entity, StateData> data;
 
         void onMovementCancelled(const entt::entity self) const
         {
@@ -156,8 +162,32 @@ namespace lq
 
         void onTargetReached(const entt::entity self) const
         {
-            const DialogTargetPayload payload{targets.at(self)};
-            stateController->ChangeState(self, PlayerStateEnum::InDialog, payload);
+            const auto interaction = data.at(self);
+            if (interaction.kind == PlayerInteractionKind::Talk)
+            {
+                const DialogTargetPayload payload{interaction.target};
+                stateController->ChangeState(self, PlayerStateEnum::InDialog, payload);
+                return;
+            }
+
+            sys->lootSystem->OnChestClick(interaction.target);
+            stateController->ChangeState(self, PlayerStateEnum::Default);
+        }
+
+        [[nodiscard]] Vector3 getDestination(
+            const entt::entity self, const PlayerInteractionPayload& payload) const
+        {
+            if (payload.kind == PlayerInteractionKind::Talk)
+            {
+                return registry->get<DialogComponent>(payload.target).conversationPos;
+            }
+
+            const auto& trans = registry->get<sage::sgTransform>(self);
+            const auto& chestTrans = registry->get<sage::sgTransform>(payload.target);
+            return Vector3Add(
+                trans.GetWorldPos(),
+                sage::Vector3MultiplyByValue(
+                    Vector3Subtract(chestTrans.GetWorldPos(), trans.GetWorldPos()), 0.85));
         }
 
       public:
@@ -168,12 +198,17 @@ namespace lq
         void OnEnter(entt::entity self, const sage::StatePayload& payload) override
         {
             auto& moveable = registry->get<sage::MoveableActor>(self);
-            const auto& dialogPayload = dynamic_cast<const DialogTargetPayload&>(payload);
-            assert(dialogPayload.target != entt::null);
-            targets.insert_or_assign(self, dialogPayload.target);
-            moveable.movementCollisionTarget = dialogPayload.target;
-            const auto& pos = registry->get<DialogComponent>(dialogPayload.target).conversationPos;
-            sys->engine.actorMovementSystem->PathfindToLocation(self, pos);
+            const auto& interactionPayload = dynamic_cast<const PlayerInteractionPayload&>(payload);
+            assert(interactionPayload.target != entt::null);
+            data.insert_or_assign(
+                self, StateData{.kind = interactionPayload.kind, .target = interactionPayload.target});
+            if (interactionPayload.kind == PlayerInteractionKind::Talk)
+            {
+                moveable.movementCollisionTarget = interactionPayload.target;
+            }
+
+            // TODO: N.B. Right now, its possible that a loot destination is outside of LOOT_RANGE.
+            sys->engine.actorMovementSystem->PathfindToLocation(self, getDestination(self, interactionPayload));
 
             auto& state = registry->get<PlayerState>(self);
             auto sub = moveable.onDestinationReached.Subscribe(
@@ -189,13 +224,14 @@ namespace lq
 
         void OnExit(entt::entity self) override
         {
-            targets.erase(self);
+            data.erase(self);
             registry->get<sage::MoveableActor>(self).movementCollisionTarget.reset();
         }
 
-        ~MovingToTalkToNPCState() override = default;
+        ~MovingToInteractionTargetState() override = default;
 
-        MovingToTalkToNPCState(entt::registry* _registry, Systems* _sys, PlayerStateMachine* _stateController)
+        MovingToInteractionTargetState(
+            entt::registry* _registry, Systems* _sys, PlayerStateMachine* _stateController)
             : State(_registry), sys(_sys), stateController(_stateController)
         {
         }
@@ -250,82 +286,6 @@ namespace lq
         ~InDialogState() override = default;
 
         InDialogState(entt::registry* _registry, Systems* _sys, PlayerStateMachine* _stateController)
-            : State(_registry), sys(_sys), stateController(_stateController)
-        {
-        }
-    };
-
-    // ----------------------------
-
-    class PlayerStateMachine::MovingToLootState : public sage::State
-    {
-      public:
-        struct Payload final : sage::StatePayload
-        {
-            entt::entity target = entt::null;
-
-            explicit Payload(const entt::entity _target) : target(_target)
-            {
-            }
-        };
-
-      private:
-        Systems* sys;
-        PlayerStateMachine* stateController;
-        std::unordered_map<entt::entity, entt::entity> targets;
-
-        void onMovementCancelled(const entt::entity self) const
-        {
-            stateController->ChangeState(self, PlayerStateEnum::Default);
-        }
-
-        void onTargetReached(const entt::entity self) const
-        {
-            sys->lootSystem->OnChestClick(targets.at(self));
-            stateController->ChangeState(self, PlayerStateEnum::Default);
-        }
-
-      public:
-        void Update(entt::entity self) override
-        {
-        }
-
-        void OnEnter(entt::entity self, const sage::StatePayload& payload) override
-        {
-            auto& moveable = registry->get<sage::MoveableActor>(self);
-            const auto& lootPayload = dynamic_cast<const Payload&>(payload);
-            const auto target = lootPayload.target;
-            assert(target != entt::null);
-            targets.insert_or_assign(self, target);
-            const auto& trans = registry->get<sage::sgTransform>(self);
-            const auto& chestTrans = registry->get<sage::sgTransform>(target);
-            Vector3 dest = Vector3Add(
-                trans.GetWorldPos(),
-                sage::Vector3MultiplyByValue(
-                    Vector3Subtract(chestTrans.GetWorldPos(), trans.GetWorldPos()), 0.85));
-            // TODO: N.B. Right now, its possible that 'dest' is outside of LOOT_RANGE
-            sys->engine.actorMovementSystem->PathfindToLocation(self, dest);
-
-            auto& state = registry->get<PlayerState>(self);
-            auto sub = moveable.onDestinationReached.Subscribe(
-                [this](entt::entity _entity) { onTargetReached(_entity); });
-            state.ManageSubscription(std::move(sub));
-            auto sub1 = moveable.onMovementCancel.Subscribe(
-                [this](entt::entity _entity) { onMovementCancelled(_entity); });
-            state.ManageSubscription(std::move(sub1));
-
-            auto& animation = registry->get<sage::Animation>(self);
-            animation.ChangeAnimationById(lq::animation_ids::Run);
-        }
-
-        void OnExit(entt::entity self) override
-        {
-            targets.erase(self);
-        }
-
-        ~MovingToLootState() override = default;
-
-        MovingToLootState(entt::registry* _registry, Systems* _sys, PlayerStateMachine* _stateController)
             : State(_registry), sys(_sys), stateController(_stateController)
         {
         }
@@ -483,22 +443,20 @@ namespace lq
     {
         auto& state = registry->get<PlayerState>(self);
         // We're not allowed to change to the same state, so change to default and then back again
-        if (state.GetCurrentStateEnum() == PlayerStateEnum::MovingToLoot)
+        if (state.GetCurrentStateEnum() == PlayerStateEnum::MovingToInteractionTarget)
         {
             ChangeState(self, PlayerStateEnum::Default);
         }
-        const MovingToLootState::Payload payload{target};
-        ChangeState(self, PlayerStateEnum::MovingToLoot, payload);
+        const PlayerInteractionPayload payload{PlayerInteractionKind::Loot, target};
+        ChangeState(self, PlayerStateEnum::MovingToInteractionTarget, payload);
     }
 
     void PlayerStateMachine::onNPCLeftClick(entt::entity self, entt::entity target)
     {
         if (!registry->any_of<DialogComponent>(target)) return;
 
-        const DialogTargetPayload payload{target};
-        ChangeState(self, PlayerStateEnum::MovingToTalkToNPC, payload);
-        //        ChangeStateExArgs<MovingToTalkToNPCState, entt::entity>(self, PlayerStateEnum::MovingToTalkToNPC,
-        //        target);
+        const PlayerInteractionPayload payload{PlayerInteractionKind::Talk, target};
+        ChangeState(self, PlayerStateEnum::MovingToInteractionTarget, payload);
     }
 
     void PlayerStateMachine::onEnemyLeftClick(entt::entity self, entt::entity target)
@@ -558,11 +516,10 @@ namespace lq
         states[PlayerStateEnum::MovingToAttackEnemy] =
             std::make_unique<MovingToAttackEnemyState>(_registry, _sys, this);
         states[PlayerStateEnum::Combat] = std::make_unique<CombatState>(_registry, _sys, this);
-        states[PlayerStateEnum::MovingToTalkToNPC] =
-            std::make_unique<MovingToTalkToNPCState>(_registry, _sys, this);
         states[PlayerStateEnum::InDialog] = std::make_unique<InDialogState>(_registry, _sys, this);
         states[PlayerStateEnum::MovingToLocation] = std::make_unique<MovingToLocationState>(_registry, _sys, this);
-        states[PlayerStateEnum::MovingToLoot] = std::make_unique<MovingToLootState>(_registry, _sys, this);
+        states[PlayerStateEnum::MovingToInteractionTarget] =
+            std::make_unique<MovingToInteractionTargetState>(_registry, _sys, this);
 
         registry->on_construct<PlayerState>().connect<&PlayerStateMachine::onComponentAdded>(this);
         registry->on_destroy<PlayerState>().connect<&PlayerStateMachine::onComponentRemoved>(this);

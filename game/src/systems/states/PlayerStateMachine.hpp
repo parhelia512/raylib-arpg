@@ -18,13 +18,29 @@ namespace lq
         }
     };
 
+    enum class PlayerInteractionKind
+    {
+        Talk,
+        Loot
+    };
+
+    struct PlayerInteractionPayload final : sage::StatePayload
+    {
+        PlayerInteractionKind kind{};
+        entt::entity target = entt::null;
+
+        PlayerInteractionPayload(const PlayerInteractionKind _kind, const entt::entity _target)
+            : kind(_kind), target(_target)
+        {
+        }
+    };
+
     class PlayerStateMachine final : public sage::StateMachine<PlayerState, PlayerStateEnum>
     {
         class DefaultState;
         class MovingToLocationState;
         class MovingToAttackEnemyState;
-        class MovingToTalkToNPCState;
-        class MovingToLootState;
+        class MovingToInteractionTargetState;
         class InDialogState;
         class CombatState;
 
