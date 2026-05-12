@@ -2,18 +2,19 @@
 #pragma once
 
 #include "components/States.hpp"
-#include "entt/entt.hpp"
+#include "engine/systems/states/StateMachineBase.hpp"
 
-#include <utility>
-#include <variant>
+#include "entt/entt.hpp"
 
 namespace lq
 {
     class Systems;
 
-    class PlayerStateMachine final
+    class PlayerStateMachine final : public sage::StateMachineBase<PlayerStateMachine, PlayerState>
     {
-        entt::registry* registry;
+        using Base = sage::StateMachineBase<PlayerStateMachine, PlayerState>;
+        friend Base;
+
         Systems* sys;
 
         // ===== Default =====
@@ -61,16 +62,6 @@ namespace lq
         void onEnemyLeftClick(entt::entity entity, entt::entity target);
 
       public:
-        template <typename NewState>
-        void ChangeState(entt::entity entity, NewState newState = {})
-        {
-            auto& state = registry->get<PlayerState>(entity);
-            std::visit([this, entity](auto& cur) { onExit(cur, entity); }, state.current);
-            state.RemoveAllSubscriptions();
-            state.current = std::move(newState);
-            onEnter(std::get<NewState>(state.current), entity);
-        }
-
         void Update();
         void Draw3D();
 

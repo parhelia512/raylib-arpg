@@ -14,21 +14,9 @@
 namespace lq
 {
 
-    enum class PartyMemberStateEnum
-    {
-        Default,
-        FollowingLeader,
-        WaitingForLeader,
-        DestinationUnreachable
-    };
-
-    class PartyMemberState : public sage::BaseStateComponent<PartyMemberState, PartyMemberStateEnum>
-    {
-      public:
-        PartyMemberState() : BaseStateComponent(PartyMemberStateEnum::Default)
-        {
-        }
-    };
+    // =================================================================================
+    // Player
+    // =================================================================================
 
     struct PlayerDefaultState
     {
@@ -101,36 +89,175 @@ namespace lq
         PlayerState& operator=(const PlayerState&) = delete;
     };
 
-    enum class GameStateEnum
+    // =================================================================================
+    // PartyMember
+    // =================================================================================
+
+    struct PartyMemberDefaultState
     {
-        Default,
-        Wave, // TODO: Can remove this now
-        Combat
     };
 
-    class GameState : public sage::BaseStateComponent<GameState, GameStateEnum>
+    struct PartyMemberFollowingLeaderState
     {
-      public:
-        GameState() : BaseStateComponent(GameStateEnum::Default)
+    };
+
+    struct PartyMemberWaitingForLeaderState
+    {
+    };
+
+    struct PartyMemberDestinationUnreachableState
+    {
+        Vector3 originalDestination{};
+        double timeStart{};
+        unsigned int tryCount = 0;
+    };
+
+    struct PartyMemberState
+    {
+        using Variant = std::variant<
+            PartyMemberDefaultState,
+            PartyMemberFollowingLeaderState,
+            PartyMemberWaitingForLeaderState,
+            PartyMemberDestinationUnreachableState>;
+
+        Variant current = PartyMemberDefaultState{};
+        std::vector<sage::Subscription> subscriptions;
+
+        void BindSubscription(sage::Subscription newSubscription)
         {
+            subscriptions.push_back(std::move(newSubscription));
         }
-    };
 
-    enum class WavemobStateEnum
-    {
-        Default,
-        TargetOutOfRange,
-        Combat,
-        Dying
-    };
-
-    class WavemobState : public sage::BaseStateComponent<WavemobState, WavemobStateEnum>
-    {
-      public:
-        WavemobState() : BaseStateComponent(WavemobStateEnum::Default)
+        void RemoveAllSubscriptions()
         {
+            for (auto& subscription : subscriptions)
+            {
+                subscription.UnSubscribe();
+            }
+            subscriptions.clear();
         }
+
+        ~PartyMemberState()
+        {
+            RemoveAllSubscriptions();
+        }
+
+        PartyMemberState() = default;
+        PartyMemberState(PartyMemberState&& other) noexcept = default;
+        PartyMemberState& operator=(PartyMemberState&& other) noexcept = default;
+        PartyMemberState(const PartyMemberState&) = delete;
+        PartyMemberState& operator=(const PartyMemberState&) = delete;
     };
+
+    // =================================================================================
+    // Wavemob
+    // =================================================================================
+
+    struct WavemobDefaultState
+    {
+    };
+
+    struct WavemobTargetOutOfRangeState
+    {
+    };
+
+    struct WavemobCombatState
+    {
+    };
+
+    struct WavemobDyingState
+    {
+    };
+
+    struct WavemobState
+    {
+        using Variant = std::variant<
+            WavemobDefaultState,
+            WavemobTargetOutOfRangeState,
+            WavemobCombatState,
+            WavemobDyingState>;
+
+        Variant current = WavemobDefaultState{};
+        std::vector<sage::Subscription> subscriptions;
+
+        void BindSubscription(sage::Subscription newSubscription)
+        {
+            subscriptions.push_back(std::move(newSubscription));
+        }
+
+        void RemoveAllSubscriptions()
+        {
+            for (auto& subscription : subscriptions)
+            {
+                subscription.UnSubscribe();
+            }
+            subscriptions.clear();
+        }
+
+        ~WavemobState()
+        {
+            RemoveAllSubscriptions();
+        }
+
+        WavemobState() = default;
+        WavemobState(WavemobState&& other) noexcept = default;
+        WavemobState& operator=(WavemobState&& other) noexcept = default;
+        WavemobState(const WavemobState&) = delete;
+        WavemobState& operator=(const WavemobState&) = delete;
+    };
+
+    // =================================================================================
+    // GameMode
+    // =================================================================================
+
+    struct GameDefaultState
+    {
+    };
+
+    struct GameWaveState
+    {
+    };
+
+    struct GameCombatState
+    {
+    };
+
+    struct GameState
+    {
+        using Variant = std::variant<GameDefaultState, GameWaveState, GameCombatState>;
+
+        Variant current = GameDefaultState{};
+        std::vector<sage::Subscription> subscriptions;
+
+        void BindSubscription(sage::Subscription newSubscription)
+        {
+            subscriptions.push_back(std::move(newSubscription));
+        }
+
+        void RemoveAllSubscriptions()
+        {
+            for (auto& subscription : subscriptions)
+            {
+                subscription.UnSubscribe();
+            }
+            subscriptions.clear();
+        }
+
+        ~GameState()
+        {
+            RemoveAllSubscriptions();
+        }
+
+        GameState() = default;
+        GameState(GameState&& other) noexcept = default;
+        GameState& operator=(GameState&& other) noexcept = default;
+        GameState(const GameState&) = delete;
+        GameState& operator=(const GameState&) = delete;
+    };
+
+    // =================================================================================
+    // Ability (still enum-based via BaseStateComponent)
+    // =================================================================================
 
     enum class AbilityStateEnum
     {

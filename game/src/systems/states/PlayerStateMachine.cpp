@@ -283,7 +283,7 @@ namespace lq
     }
 
     PlayerStateMachine::PlayerStateMachine(entt::registry* _registry, Systems* _sys)
-        : registry(_registry), sys(_sys)
+        : Base(_registry), sys(_sys)
     {
         registry->on_construct<PlayerState>().connect<&PlayerStateMachine::onComponentAdded>(this);
         registry->on_destroy<PlayerState>().connect<&PlayerStateMachine::onComponentRemoved>(this);
