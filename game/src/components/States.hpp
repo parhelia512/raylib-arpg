@@ -4,6 +4,13 @@
 
 #pragma once
 #include "engine/components/BaseStateComponent.hpp"
+#include "engine/Event.hpp"
+
+#include "entt/entt.hpp"
+
+#include <type_traits>
+#include <variant>
+#include <vector>
 
 namespace lq
 {
@@ -18,7 +25,7 @@ namespace lq
 
     class PartyMemberState : public sage::BaseStateComponent<PartyMemberState, PartyMemberStateEnum>
     {
-    public:
+      public:
         PartyMemberState() : BaseStateComponent(PartyMemberStateEnum::Default)
         {
         }
@@ -34,12 +41,134 @@ namespace lq
         Combat
     };
 
-    class PlayerState : public sage::BaseStateComponent<PlayerState, PlayerStateEnum>
+    enum class PlayerInteractionKind
     {
-    public:
-        PlayerState() : BaseStateComponent(PlayerStateEnum::Default)
+        Talk,
+        Loot
+    };
+
+    struct PlayerDefaultState
+    {
+    };
+
+    struct PlayerMovingToLocationState
+    {
+    };
+
+    struct PlayerMovingToAttackEnemyState
+    {
+    };
+
+    struct PlayerMovingToInteractionTargetState
+    {
+        PlayerInteractionKind kind{};
+        entt::entity target = entt::null;
+    };
+
+    struct PlayerInDialogState
+    {
+        entt::entity target = entt::null;
+    };
+
+    struct PlayerCombatState
+    {
+    };
+
+    class PlayerState
+    {
+        using StateVariant = std::variant<
+            PlayerDefaultState,
+            PlayerMovingToLocationState,
+            PlayerMovingToAttackEnemyState,
+            PlayerMovingToInteractionTargetState,
+            PlayerInDialogState,
+            PlayerCombatState>;
+
+        StateVariant currentState = PlayerDefaultState{};
+        std::vector<sage::Subscription> currentStateSubscriptions;
+
+      public:
+        void ManageSubscription(sage::Subscription newSubscription)
         {
+            currentStateSubscriptions.push_back(std::move(newSubscription));
         }
+
+        template <typename StateType>
+        [[nodiscard]] bool Is() const
+        {
+            return std::holds_alternative<StateType>(currentState);
+        }
+
+        template <typename StateType>
+        StateType& Get()
+        {
+            return std::get<StateType>(currentState);
+        }
+
+        template <typename StateType>
+        const StateType& Get() const
+        {
+            return std::get<StateType>(currentState);
+        }
+
+        template <typename StateType>
+        void Set(StateType nextState)
+        {
+            currentState = std::move(nextState);
+        }
+
+        void RemoveAllSubscriptions()
+        {
+            for (auto& subscription : currentStateSubscriptions)
+            {
+                subscription.UnSubscribe();
+            }
+            currentStateSubscriptions.clear();
+        }
+
+        [[nodiscard]] PlayerStateEnum GetCurrentStateEnum() const
+        {
+            return std::visit(
+                []<typename T0>(const T0& state) {
+                    using StateType = std::decay_t<T0>;
+                    if constexpr (std::is_same_v<StateType, PlayerDefaultState>)
+                    {
+                        return PlayerStateEnum::Default;
+                    }
+                    else if constexpr (std::is_same_v<StateType, PlayerMovingToLocationState>)
+                    {
+                        return PlayerStateEnum::MovingToLocation;
+                    }
+                    else if constexpr (std::is_same_v<StateType, PlayerMovingToAttackEnemyState>)
+                    {
+                        return PlayerStateEnum::MovingToAttackEnemy;
+                    }
+                    else if constexpr (std::is_same_v<StateType, PlayerMovingToInteractionTargetState>)
+                    {
+                        return PlayerStateEnum::MovingToInteractionTarget;
+                    }
+                    else if constexpr (std::is_same_v<StateType, PlayerInDialogState>)
+                    {
+                        return PlayerStateEnum::InDialog;
+                    }
+                    else
+                    {
+                        return PlayerStateEnum::Combat;
+                    }
+                },
+                currentState);
+        }
+
+        ~PlayerState()
+        {
+            RemoveAllSubscriptions();
+        }
+
+        PlayerState() = default;
+        PlayerState(PlayerState&& other) noexcept = default;
+        PlayerState& operator=(PlayerState&& other) noexcept = default;
+        PlayerState(const PlayerState&) = delete;
+        PlayerState& operator=(const PlayerState&) = delete;
     };
 
     enum class GameStateEnum
@@ -51,7 +180,7 @@ namespace lq
 
     class GameState : public sage::BaseStateComponent<GameState, GameStateEnum>
     {
-    public:
+      public:
         GameState() : BaseStateComponent(GameStateEnum::Default)
         {
         }
@@ -67,7 +196,7 @@ namespace lq
 
     class WavemobState : public sage::BaseStateComponent<WavemobState, WavemobStateEnum>
     {
-    public:
+      public:
         WavemobState() : BaseStateComponent(WavemobStateEnum::Default)
         {
         }
@@ -82,7 +211,7 @@ namespace lq
 
     class AbilityState : public sage::BaseStateComponent<AbilityState, AbilityStateEnum>
     {
-    public:
+      public:
         AbilityState() : BaseStateComponent(AbilityStateEnum::IDLE)
         {
         }

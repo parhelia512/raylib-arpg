@@ -5,6 +5,9 @@
 #include "engine/systems/states/StateMachine.hpp"
 #include "entt/entt.hpp"
 
+#include <memory>
+#include <unordered_map>
+
 namespace lq
 {
     class Systems;
@@ -18,12 +21,6 @@ namespace lq
         }
     };
 
-    enum class PlayerInteractionKind
-    {
-        Talk,
-        Loot
-    };
-
     struct PlayerInteractionPayload final : sage::StatePayload
     {
         PlayerInteractionKind kind{};
@@ -35,7 +32,7 @@ namespace lq
         }
     };
 
-    class PlayerStateMachine final : public sage::StateMachine<PlayerState, PlayerStateEnum>
+    class PlayerStateMachine final
     {
         class DefaultState;
         class MovingToLocationState;
@@ -44,6 +41,11 @@ namespace lq
         class InDialogState;
         class CombatState;
 
+        entt::registry* registry;
+        Systems* sys;
+        std::unordered_map<PlayerStateEnum, std::unique_ptr<sage::State>> states;
+
+        sage::State* GetStateFromEnum(PlayerStateEnum state);
         void onComponentAdded(entt::entity entity);
         void onComponentRemoved(entt::entity entity);
 
@@ -53,12 +55,11 @@ namespace lq
         void onEnemyLeftClick(entt::entity self, entt::entity target);
 
       public:
+        void ChangeState(entt::entity entity, PlayerStateEnum newState, const sage::StatePayload& payload = {});
         void Update();
         void Draw3D();
 
-        ~PlayerStateMachine() override = default;
+        ~PlayerStateMachine() = default;
         PlayerStateMachine(entt::registry* _registry, Systems* sys);
-
-        friend class StateMachine; // Required for CRTP
     };
 } // namespace lq
