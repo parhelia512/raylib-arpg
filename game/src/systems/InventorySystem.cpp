@@ -122,9 +122,8 @@ namespace lq
 
     InventorySystem::InventorySystem(entt::registry* _registry, Systems* _sys) : registry(_registry), sys(_sys)
     {
-        _sys->engine.cursor->onLeftClick.Subscribe([this](entt::entity itemId) {
-            const auto& col = registry->get<sage::Collideable>(itemId);
-            if (col.collisionLayer != lq::collision_layers::Item) return;
+        _sys->engine.cursor->onLeftClick.Subscribe([this](entt::entity itemId, sage::CollisionLayer layer) {
+            if (layer != lq::collision_layers::Item) return;
             onWorldItemClicked(itemId);
         });
 

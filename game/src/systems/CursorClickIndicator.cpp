@@ -2,7 +2,6 @@
 
 #include "Systems.hpp"
 
-#include "engine/components/Collideable.hpp"
 #include "engine/components/MoveableActor.hpp"
 #include "engine/components/Renderable.hpp"
 #include "engine/components/sgTransform.hpp"
@@ -15,11 +14,10 @@
 
 namespace lq
 {
-    void CursorClickIndicator::onCursorClick(entt::entity entity) const
+    void CursorClickIndicator::onCursorClick(entt::entity entity, sage::CollisionLayer layer) const
     {
         if (selectedActor == entt::null || !registry->valid(selectedActor) ||
             !registry->all_of<sage::MoveableActor>(selectedActor) || entity == entt::null ||
-            !registry->any_of<sage::Collideable>(entity) ||
             !sys->engine.navigationGridSystem->IsValidMove(
                 sys->engine.cursor->getFirstNaviCollision().point, selectedActor))
         {
@@ -27,9 +25,7 @@ namespace lq
             return;
         }
 
-        const auto& col = registry->get<sage::Collideable>(entity);
-        if (col.collisionLayer != sage::collision_layers::GeometrySimple &&
-            col.collisionLayer != sage::collision_layers::GeometryComplex)
+        if (layer != sage::collision_layers::GeometrySimple && layer != sage::collision_layers::GeometryComplex)
         {
             disableIndicator();
             return;
@@ -88,8 +84,8 @@ namespace lq
     CursorClickIndicator::CursorClickIndicator(entt::registry* _registry, Systems* _sys)
         : registry(_registry), sys(_sys), self(registry->create())
     {
-        cursorLeftClickSub =
-            _sys->engine.cursor->onLeftClick.Subscribe([this](const entt::entity entity) { onCursorClick(entity); });
+        cursorLeftClickSub = _sys->engine.cursor->onLeftClick.Subscribe(
+            [this](entt::entity entity, sage::CollisionLayer layer) { onCursorClick(entity, layer); });
 
         _registry->emplace<sage::sgTransform>(self);
         auto model = LoadModelFromMesh(GenMeshSphere(1, 32, 32));

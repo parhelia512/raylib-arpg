@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/Event.hpp"
+#include "engine/CollisionLayers.hpp"
 
 #include "entt/entt.hpp"
 
@@ -19,7 +20,7 @@ namespace lq
         sage::Subscription destinationReachedSub{};
         sage::Subscription cursorLeftClickSub{};
 
-        void onCursorClick(entt::entity entity) const;
+        void onCursorClick(entt::entity entity, sage::CollisionLayer layer) const;
         void disableIndicator() const;
 
       public:

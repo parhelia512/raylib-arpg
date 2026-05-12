@@ -1,9 +1,9 @@
 #include "PlayerStateMachine.hpp"
 #include "animation/RpgAnimationIds.hpp"
+#include "collision/RpgCollisionLayers.hpp"
 
 #include "Systems.hpp"
 
-#include "../../components/ControllableActor.hpp"
 #include "AbilityFactory.hpp"
 #include "components/Ability.hpp"
 #include "components/CombatableActor.hpp"
@@ -75,22 +75,17 @@ namespace lq
     void PlayerStateMachine::onEnter(PlayerMovingToAttackEnemyState&, const entt::entity entity)
     {
         registry->get<sage::Animation>(entity).ChangeAnimationById(lq::animation_ids::Run);
-
         auto& moveableActor = registry->get<sage::MoveableActor>(entity);
         auto& combatable = registry->get<CombatableActor>(entity);
         assert(combatable.target != entt::null);
-        auto& controllable = registry->get<ControllableActor>(entity);
         auto& state = registry->get<PlayerState>(entity);
-
         auto onTargetReached = [this](const entt::entity e) { ChangeState(e, PlayerCombatState{}); };
-        auto onAttackCancelled = [this](const entt::entity e, entt::entity) {
-            registry->get<CombatableActor>(e).target = entt::null;
-            ChangeState(e, PlayerDefaultState{});
-        };
-
         state.BindSubscription(moveableActor.onDestinationReached.Subscribe(onTargetReached));
-        state.BindSubscription(controllable.onFloorClick.Subscribe(onAttackCancelled));
-
+        state.BindSubscription(sys->engine.cursor->onNavigationClick.Subscribe(
+            [this, entity](entt::entity, sage::CollisionLayer) {
+                registry->get<CombatableActor>(entity).target = entt::null;
+                ChangeState(entity, PlayerDefaultState{});
+            }));
         const Vector3 playerPos = registry->get<sage::sgTransform>(entity).GetWorldPos();
         const Vector3 enemyPos = registry->get<sage::sgTransform>(combatable.target).GetWorldPos();
         const Vector3 offset =
@@ -138,8 +133,7 @@ namespace lq
         // TODO: N.B. Right now, its possible that a loot destination is outside of LOOT_RANGE.
         const auto destination = Vector3Add(
             trans.GetWorldPos(),
-            sage::Vector3MultiplyByValue(
-                Vector3Subtract(chestTrans.GetWorldPos(), trans.GetWorldPos()), 0.85));
+            sage::Vector3MultiplyByValue(Vector3Subtract(chestTrans.GetWorldPos(), trans.GetWorldPos()), 0.85));
         sys->engine.actorMovementSystem->PathfindToLocation(entity, destination);
 
         state.BindSubscription(moveable.onDestinationReached.Subscribe([this](const entt::entity e) {
@@ -258,32 +252,30 @@ namespace lq
 
     void PlayerStateMachine::onComponentAdded(const entt::entity entity)
     {
-        // Cursor and controllable events are connected in ControllableActorSystem
-        auto& controllable = registry->get<ControllableActor>(entity);
-        controllable.onEnemyLeftClickSub = controllable.onEnemyLeftClick.Subscribe(
-            [this](entt::entity e, entt::entity target) { onEnemyLeftClick(e, target); });
-        controllable.onNPCLeftClickSub = controllable.onNPCLeftClick.Subscribe(
-            [this](entt::entity e, entt::entity target) { onNPCLeftClick(e, target); });
-        controllable.onFloorClickSub = controllable.onFloorClick.Subscribe(
-            [this](entt::entity e, entt::entity target) { onFloorClick(e, target); });
-        controllable.onChestClickSub = controllable.onChestClick.Subscribe(
-            [this](entt::entity e, entt::entity target) { onChestClick(e, target); });
-
         auto& state = registry->get<PlayerState>(entity);
+        auto& cursor = *sys->engine.cursor;
+
+        state.BindSubscription(cursor.onNavigationClick.Subscribe(
+            [this, entity](entt::entity target, sage::CollisionLayer) { onFloorClick(entity, target); }));
+        state.BindSubscription(cursor.onLeftClick.Subscribe(
+            [this, entity](entt::entity target, sage::CollisionLayer layer) {
+                if (layer == collision_layers::Enemy)
+                    onEnemyLeftClick(entity, target);
+                else if (layer == collision_layers::Npc)
+                    onNPCLeftClick(entity, target);
+                else if (layer == collision_layers::Chest)
+                    onChestClick(entity, target);
+            }));
+
         std::visit([this, entity](auto& cur) { onEnter(cur, entity); }, state.current);
     }
 
-    void PlayerStateMachine::onComponentRemoved(const entt::entity entity)
+    void PlayerStateMachine::onComponentRemoved(const entt::entity)
     {
-        auto& controllable = registry->get<ControllableActor>(entity);
-        controllable.onEnemyLeftClickSub.UnSubscribe();
-        controllable.onChestClickSub.UnSubscribe();
-        controllable.onNPCLeftClickSub.UnSubscribe();
-        controllable.onFloorClickSub.UnSubscribe();
+        // PlayerState destructor unsubscribes everything bound via BindSubscription.
     }
 
-    PlayerStateMachine::PlayerStateMachine(entt::registry* _registry, Systems* _sys)
-        : Base(_registry), sys(_sys)
+    PlayerStateMachine::PlayerStateMachine(entt::registry* _registry, Systems* _sys) : Base(_registry), sys(_sys)
     {
         registry->on_construct<PlayerState>().connect<&PlayerStateMachine::onComponentAdded>(this);
         registry->on_destroy<PlayerState>().connect<&PlayerStateMachine::onComponentRemoved>(this);

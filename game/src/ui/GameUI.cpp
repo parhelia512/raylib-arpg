@@ -639,8 +639,10 @@ namespace lq
     LeverUIEngine::LeverUIEngine(entt::registry* _registry, Systems* _sys)
         : GameUIEngine(_registry, _sys->Engine()), sys(_sys)
     {
-        _sys->engine.cursor->onHover.Subscribe([this](const entt::entity entity) { onWorldItemHover(entity); });
-        _sys->engine.cursor->onHover.Subscribe([this](const entt::entity entity) { onNPCHover(entity); });
+        _sys->engine.cursor->onHover.Subscribe(
+            [this](entt::entity entity, sage::CollisionLayer) { onWorldItemHover(entity); });
+        _sys->engine.cursor->onHover.Subscribe(
+            [this](entt::entity entity, sage::CollisionLayer) { onNPCHover(entity); });
         _sys->engine.cursor->onStopHover.Subscribe([this]() { onStopWorldHover(); });
         _sys->engine.actorMovementSystem->onPathfindFailed.Subscribe(
             [this](
