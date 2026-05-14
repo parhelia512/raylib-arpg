@@ -240,8 +240,7 @@ namespace sage
 
         auto entity = registry->create();
 
-        auto model = ResourceManager::GetInstance().GetModelCopy(meshName);
-        model.SetKey(meshName);
+        auto model = ResourceManager::GetInstance().GetModelView(meshName);
 
         Vector3 scaledPosition = scaleFromOrigin({x, y, z}, WORLD_SCALE);
         Matrix rotMat =
@@ -499,6 +498,32 @@ namespace sage
                 }
             }
             std::cout << "FINISH: Processing image data into resource manager. \n";
+        }
+
+        {
+            // Bake raylib primitives into the asset pack as shared entries. Each gets a
+            // stable key ("primitive_sphere", etc.) and goes through dedupeAndShareMaterials
+            // so the default material is pooled like any other. Mutable instances are minted
+            // at runtime via ResourceManager::CreateModelMutable, which regenerates the mesh
+            // via a hardcoded generator (sourcePath is empty for primitives).
+            std::cout << "START: Baking raylib primitives into resource manager. \n";
+            auto& rm = ResourceManager::GetInstance();
+            auto registerPrimitive = [&rm](const std::string& key, Mesh mesh) {
+                Model model = LoadModelFromMesh(mesh);
+                std::vector<std::string> materialNames;
+                rm.dedupeAndShareMaterials(model, materialNames, /*sourcePath=*/"");
+                rm.StoreModel(ModelInfo{model, std::move(materialNames), "", /*privateMaterials=*/false}, key);
+            };
+            registerPrimitive("primitive_sphere", GenMeshSphere(1.0f, 32, 32));
+            registerPrimitive("primitive_hemisphere", GenMeshHemiSphere(1.0f, 16, 32));
+            registerPrimitive("primitive_plane", GenMeshPlane(1.0f, 1.0f, 1, 1));
+            registerPrimitive("primitive_cube", GenMeshCube(1.0f, 1.0f, 1.0f));
+            registerPrimitive("primitive_cylinder", GenMeshCylinder(1.0f, 1.0f, 32));
+            registerPrimitive("primitive_cone", GenMeshCone(1.0f, 1.0f, 32));
+            registerPrimitive("primitive_torus", GenMeshTorus(0.25f, 1.0f, 16, 32));
+            registerPrimitive("primitive_knot", GenMeshKnot(1.0f, 2.0f, 16, 128));
+            registerPrimitive("primitive_poly", GenMeshPoly(5, 1.0f));
+            std::cout << "FINISH: Baking raylib primitives into resource manager. \n";
         }
 
         // Currently, serialization of music/sound is not supported

@@ -55,9 +55,7 @@ namespace lq
         shader = sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/custom/lightning.fs");
         secondsLoc = GetShaderLocation(shader, "seconds");
         SetShaderValue(shader, secondsLoc, &time, SHADER_UNIFORM_FLOAT);
-        const std::string dstKey =
-            "vfx_sphere#lightning#" + std::to_string(reinterpret_cast<uintptr_t>(this));
-        model = sage::ResourceManager::GetInstance().GetModelDeepCopy("vfx_sphere", dstKey);
+        model = sage::ResourceManager::GetInstance().CreateModelMutable("vfx_sphere");
 
         model.SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
         model.SetTexture(texture2, 0, MATERIAL_MAP_EMISSION);

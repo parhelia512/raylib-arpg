@@ -6,6 +6,7 @@
 #include "engine/components/Renderable.hpp"
 #include "engine/components/sgTransform.hpp"
 #include "engine/Cursor.hpp"
+#include "engine/ResourceManager.hpp"
 #include "engine/systems/NavigationGridSystem.hpp"
 #include "engine/systems/TransformSystem.hpp"
 
@@ -16,16 +17,17 @@ namespace lq
 {
     void CursorClickIndicator::onCursorClick(entt::entity entity, sage::CollisionLayer layer) const
     {
+        const auto& navHitInfo = sys->engine.cursor->getNavigationHitInfo();
         if (selectedActor == entt::null || !registry->valid(selectedActor) ||
-            !registry->all_of<sage::MoveableActor>(selectedActor) || entity == entt::null ||
-            !sys->engine.navigationGridSystem->IsValidMove(
-                sys->engine.cursor->getFirstNaviCollision().point, selectedActor))
+            !registry->all_of<sage::MoveableActor>(selectedActor) || !navHitInfo.rlCollision.hit ||
+            navHitInfo.collidedEntityId == entt::null ||
+            !sys->engine.navigationGridSystem->IsValidMove(navHitInfo.rlCollision.point, selectedActor))
         {
             disableIndicator();
             return;
         }
 
-        if (layer != sage::collision_layers::GeometrySimple && layer != sage::collision_layers::GeometryComplex)
+        if (!sage::IsNavigationLayer(navHitInfo.collisionLayer))
         {
             disableIndicator();
             return;
@@ -84,12 +86,11 @@ namespace lq
     CursorClickIndicator::CursorClickIndicator(entt::registry* _registry, Systems* _sys)
         : registry(_registry), sys(_sys), self(registry->create())
     {
-        cursorLeftClickSub = _sys->engine.cursor->onLeftClick.Subscribe(
+        cursorClickSub = _sys->engine.cursor->onLeftClick.Subscribe(
             [this](entt::entity entity, sage::CollisionLayer layer) { onCursorClick(entity, layer); });
 
         _registry->emplace<sage::sgTransform>(self);
-        auto model = LoadModelFromMesh(GenMeshSphere(1, 32, 32));
-        sage::ModelSafeOwned sphere(model);
+        auto sphere = sage::ResourceManager::GetInstance().CreateModelMutable("primitive_sphere");
         auto& renderable = _registry->emplace<sage::Renderable>(self, std::move(sphere), MatrixIdentity());
         renderable.hint = GREEN;
         renderable.active = false;

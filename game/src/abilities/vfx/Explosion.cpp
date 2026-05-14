@@ -7,6 +7,7 @@
 #include "engine/components/Renderable.hpp"
 #include "engine/components/sgTransform.hpp"
 #include "engine/EngineSystems.hpp"
+#include "engine/ResourceManager.hpp"
 #include "engine/systems/TransformSystem.hpp"
 
 namespace lq
@@ -38,15 +39,14 @@ namespace lq
     Explosion::Explosion(entt::registry* _registry, sage::EngineSystems* _sys) : sys(_sys)
     {
         registry = _registry;
-        auto sphere = LoadModelFromMesh(GenMeshHemiSphere(1.0f, 16, 16));
+        auto sphere = sage::ResourceManager::GetInstance().CreateModelMutable("primitive_hemisphere");
+        sphere.SetShader(
+            sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/base.fs"), 0);
+
         entity = registry->create();
         registry->emplace<sage::sgTransform>(entity);
         auto& renderable =
-            registry->emplace<sage::Renderable>(entity, sage::ModelSafeOwned(sphere), MatrixIdentity());
+            registry->emplace<sage::Renderable>(entity, std::move(sphere), MatrixIdentity());
         renderable.hint = Color{255, 0, 0, 100};
-        // Procedural Renderable holds a ModelSafeOwned; downcast to reach public SetShader.
-        static_cast<sage::ModelSafeOwned*>(renderable.GetModel())
-            ->SetShader(
-                sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/glsl330/base.fs"), 0);
     }
 } // namespace lq

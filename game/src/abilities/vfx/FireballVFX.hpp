@@ -20,10 +20,10 @@ namespace lq
 
         Vector3 origin{};
         float time = 0.0f;
-        sage::ModelSafeManaged model;
+        sage::ModelMutable model;
 
       public:
-        const sage::ModelSafe& GetModel();
+        const sage::ModelView& GetModel();
         void InitSystem() override;
         void Update(float dt) override;
         void Draw3D() const override;

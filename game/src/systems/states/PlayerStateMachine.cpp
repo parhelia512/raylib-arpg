@@ -48,7 +48,7 @@ namespace lq
         }
 
         if (sys->engine.actorMovementSystem->TryPathfindToLocation(
-                entity, sys->engine.cursor->getFirstCollision().point))
+                entity, sys->engine.cursor->getFirstNaviCollision().point))
         {
             registry->get<sage::Animation>(entity).ChangeAnimationById(lq::animation_ids::Run);
             state.BindSubscription(moveable.onDestinationReached.Subscribe(
@@ -250,14 +250,14 @@ namespace lq
     {
     }
 
-    void PlayerStateMachine::onComponentAdded(const entt::entity entity)
+    void PlayerStateMachine::bindCursorInput(const entt::entity entity)
     {
         auto& state = registry->get<PlayerState>(entity);
         auto& cursor = *sys->engine.cursor;
 
-        state.BindSubscription(cursor.onNavigationClick.Subscribe(
+        state.BindPersistentSubscription(cursor.onNavigationClick.Subscribe(
             [this, entity](entt::entity target, sage::CollisionLayer) { onFloorClick(entity, target); }));
-        state.BindSubscription(cursor.onLeftClick.Subscribe(
+        state.BindPersistentSubscription(cursor.onLeftClick.Subscribe(
             [this, entity](entt::entity target, sage::CollisionLayer layer) {
                 if (layer == collision_layers::Enemy)
                     onEnemyLeftClick(entity, target);
@@ -266,13 +266,19 @@ namespace lq
                 else if (layer == collision_layers::Chest)
                     onChestClick(entity, target);
             }));
-
-        std::visit([this, entity](auto& cur) { onEnter(cur, entity); }, state.current);
     }
 
-    void PlayerStateMachine::onComponentRemoved(const entt::entity)
+    void PlayerStateMachine::onComponentAdded(const entt::entity entity)
     {
-        // PlayerState destructor unsubscribes everything bound via BindSubscription.
+        bindCursorInput(entity);
+        std::visit([this, entity](auto& cur) { onEnter(cur, entity); }, registry->get<PlayerState>(entity).current);
+    }
+
+    void PlayerStateMachine::onComponentRemoved(const entt::entity entity)
+    {
+        auto& state = registry->get<PlayerState>(entity);
+        state.RemoveAllSubscriptions();
+        state.RemovePersistentSubscriptions();
     }
 
     PlayerStateMachine::PlayerStateMachine(entt::registry* _registry, Systems* _sys) : Base(_registry), sys(_sys)

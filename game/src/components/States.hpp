@@ -62,10 +62,16 @@ namespace lq
 
         Variant current = PlayerDefaultState{};
         std::vector<sage::Subscription> subscriptions;
+        std::vector<sage::Subscription> persistentSubscriptions;
 
         void BindSubscription(sage::Subscription newSubscription)
         {
             subscriptions.push_back(std::move(newSubscription));
+        }
+
+        void BindPersistentSubscription(sage::Subscription newSubscription)
+        {
+            persistentSubscriptions.push_back(std::move(newSubscription));
         }
 
         void RemoveAllSubscriptions()
@@ -77,9 +83,19 @@ namespace lq
             subscriptions.clear();
         }
 
+        void RemovePersistentSubscriptions()
+        {
+            for (auto& subscription : persistentSubscriptions)
+            {
+                subscription.UnSubscribe();
+            }
+            persistentSubscriptions.clear();
+        }
+
         ~PlayerState()
         {
             RemoveAllSubscriptions();
+            RemovePersistentSubscriptions();
         }
 
         PlayerState() = default;

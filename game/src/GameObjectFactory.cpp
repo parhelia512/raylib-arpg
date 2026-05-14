@@ -97,9 +97,8 @@ namespace lq
         moveable.movementSpeed = 0.25f;
 
         Matrix modelTransform = MatrixScale(0.03f, 0.03f, 0.03f);
-        const std::string dstKey = "mdl_goblin#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey), modelTransform);
+            id, sage::ResourceManager::GetInstance().CreateModelMutable("mdl_goblin"), modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -138,9 +137,8 @@ namespace lq
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.03f, 0.03f, 0.03f);
-        const std::string dstKey = "mdl_goblin#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_goblin", dstKey), modelTransform);
+            id, sage::ResourceManager::GetInstance().CreateModelMutable("mdl_goblin"), modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
         uber.SetFlagAll(sage::UberShaderComponent::Flags::Lit);
@@ -176,10 +174,9 @@ namespace lq
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.035f, 0.035f, 0.035f);
-        const std::string dstKey = "mdl_player_default#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
             id,
-            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_player_default", dstKey),
+            sage::ResourceManager::GetInstance().CreateModelMutable("mdl_player_default"),
             modelTransform);
         renderable.SetName("Arissa");
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
@@ -224,10 +221,9 @@ namespace lq
         placeActor(registry, id, sys, position);
 
         Matrix modelTransform = MatrixScale(0.035f, 0.035f, 0.035f);
-        const std::string dstKey = "mdl_player_default#" + std::to_string(static_cast<uint32_t>(id));
         auto& renderable = registry->emplace<sage::Renderable>(
             id,
-            sage::ResourceManager::GetInstance().GetModelDeepCopy("mdl_player_default", dstKey),
+            sage::ResourceManager::GetInstance().CreateModelMutable("mdl_player_default"),
             modelTransform);
         renderable.SetName(name);
         auto& uber = registry->emplace<sage::UberShaderComponent>(id, renderable.GetModel()->GetMaterialCount());
@@ -304,23 +300,21 @@ namespace lq
             Texture texture = sage::ResourceManager::GetInstance().TextureLoad("T_Random_50");
             Texture texture2 = sage::ResourceManager::GetInstance().TextureLoad("T_Random_45");
 
-            Matrix modelTransform = MatrixRotateX(90 * DEG2RAD);
+            // Portal plane: scale the canonical unit primitive_plane by 20 via the model transform.
+            Matrix modelTransform = MatrixMultiply(MatrixScale(20.0f, 20.0f, 1.0f), MatrixRotateX(90 * DEG2RAD));
 
-            Model tmp_model = LoadModelFromMesh(GenMeshPlane(20, 20, 1, 1));
-            sage::ModelSafeOwned model(tmp_model);
-            auto& renderable = registry->emplace<sage::Renderable>(id, std::move(model), modelTransform);
-            renderable.SetName("Portal");
+            auto portalModel = sage::ResourceManager::GetInstance().CreateModelMutable("primitive_plane");
 
             Shader shader =
                 sage::ResourceManager::GetInstance().ShaderLoad(nullptr, "resources/shaders/custom/portal.fs");
             int secondsLoc = GetShaderLocation(shader, "seconds");
-            // Renderable holds a ModelSafeOwned here; downcast lets us reach the public mutators
-            // without going through ModelSafe's friend-only SetShader.
-            auto* ownedModel = static_cast<sage::ModelSafeOwned*>(renderable.GetModel());
-            ownedModel->SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
-            ownedModel->SetTexture(texture2, 0, MATERIAL_MAP_EMISSION);
+            portalModel.SetTexture(texture, 0, MATERIAL_MAP_DIFFUSE);
+            portalModel.SetTexture(texture2, 0, MATERIAL_MAP_EMISSION);
             shader.locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation(shader, "texture1");
-            ownedModel->SetShader(shader, 0);
+            portalModel.SetShader(shader, 0);
+
+            auto& renderable = registry->emplace<sage::Renderable>(id, std::move(portalModel), modelTransform);
+            renderable.SetName("Portal");
 
             renderable.reqShaderUpdate = [sys, secondsLoc](entt::entity entity) -> void {
                 auto& r = sys->engine.registry->get<sage::Renderable>(entity);
@@ -352,7 +346,7 @@ namespace lq
         Matrix modelTransform = MatrixIdentity();
 
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelCopy("MDL_BUILDING_PORTAL"), modelTransform);
+            id, sage::ResourceManager::GetInstance().GetModelView("MDL_BUILDING_PORTAL"), modelTransform);
         renderable.SetName("Portal Outer");
         sys->engine.lightSubSystem->LinkRenderableToLight(id);
 
@@ -379,7 +373,7 @@ namespace lq
 
         Matrix modelTransform = MatrixIdentity();
         auto& renderable = registry->emplace<sage::Renderable>(
-            id, sage::ResourceManager::GetInstance().GetModelCopy("MDL_BUILDING_WIZARDTOWER1"), modelTransform);
+            id, sage::ResourceManager::GetInstance().GetModelView("MDL_BUILDING_WIZARDTOWER1"), modelTransform);
         renderable.SetName("Wizard Tower");
         sys->engine.lightSubSystem->LinkRenderableToLight(id);
 
@@ -397,7 +391,7 @@ namespace lq
     {
         auto& item = registry->get<ItemComponent>(itemId);
         if (item.HasFlag(ItemFlags::QUEST)) return false;
-        auto model = sage::ResourceManager::GetInstance().GetModelCopy(item.model);
+        auto model = sage::ResourceManager::GetInstance().GetModelView(item.model);
         // TODO: Need a way to store the matrix scale? Maybe in the resource packer we should store the transform
         registry->emplace<sage::Renderable>(itemId, std::move(model), MatrixScale(0.035, 0.035, 0.035));
         const auto& transform = registry->emplace<sage::sgTransform>(itemId);

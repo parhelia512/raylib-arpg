@@ -223,7 +223,7 @@ namespace lq
         const auto& item = registry->get<ItemComponent>(itemId);
         registry->emplace<sage::Renderable>(
             weaponEntity,
-            sage::ResourceManager::GetInstance().GetModelCopy(item.model),
+            sage::ResourceManager::GetInstance().GetModelView(item.model),
             renderable.initialTransform);
         auto& uber =
             registry->emplace<sage::UberShaderComponent>(weaponEntity, renderable.GetModel()->GetMaterialCount());

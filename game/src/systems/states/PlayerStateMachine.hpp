@@ -12,7 +12,7 @@ namespace lq
 
     class PlayerStateMachine final : public sage::StateMachineBase<PlayerStateMachine, PlayerState>
     {
-        using Base = sage::StateMachineBase<PlayerStateMachine, PlayerState>;
+        using Base = StateMachineBase<PlayerStateMachine, PlayerState>;
         friend Base;
 
         Systems* sys;
@@ -55,6 +55,7 @@ namespace lq
 
         void onComponentAdded(entt::entity entity);
         void onComponentRemoved(entt::entity entity);
+        void bindCursorInput(entt::entity entity);
 
         void onFloorClick(entt::entity entity, entt::entity);
         void onChestClick(entt::entity entity, entt::entity target);
